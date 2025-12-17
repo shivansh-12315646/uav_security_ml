@@ -21,8 +21,8 @@ bcrypt = Bcrypt()
 mail = Mail()
 limiter = Limiter(
     key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://"  # Use memory storage as fallback
+    default_limits=["200 per day", "50 per hour"]
+    # Storage URL will be configured from app.config during init_app
 )
 cors = CORS()
 csrf = CSRFProtect()
@@ -37,7 +37,10 @@ def init_extensions(app):
     bcrypt.init_app(app)
     mail.init_app(app)
     
-    # Initialize limiter with memory storage
+    # Initialize limiter with Redis if available in config, otherwise use memory
+    # Note: Memory storage is for development only. Use Redis in production.
+    if not app.config.get('RATELIMIT_STORAGE_URL'):
+        app.config['RATELIMIT_STORAGE_URL'] = 'memory://'
     limiter.init_app(app)
     
     cors.init_app(app)

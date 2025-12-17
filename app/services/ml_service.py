@@ -5,7 +5,10 @@ Handles model loading, prediction, and model management.
 import os
 import joblib
 import numpy as np
-from datetime import datetime
+import logging
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 
 class MLService:
@@ -54,13 +57,13 @@ class MLService:
                             try:
                                 self.models[model_name] = joblib.load(model_path)
                             except Exception as e:
-                                print(f"Error loading model {model_name}: {e}")
+                                logger.error(f"Error loading model {model_name}: {e}")
             
             if not self.active_model_name and self.models:
                 self.active_model_name = list(self.models.keys())[0]
                 
         except Exception as e:
-            print(f"Error loading models: {e}")
+            logger.error(f"Error loading models: {e}")
     
     def predict(self, features, model_name=None):
         """

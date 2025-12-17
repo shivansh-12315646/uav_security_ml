@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UAV Security Dashboard</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <aside class="sidebar">
+        <h2>🛡 UAV Security</h2>
+        <a href="/">Overview</a>
+        <a href="/detect">Live Detection</a>
+        <a href="/analytics">Analytics</a>
+        <a href="/algorithms">Algorithms</a>
+        <a href="/history">History</a>
+    </aside>
+
+    <main class="content">
+        {% block content %}{% endblock %}
+    </main>
+</div>
+
+</body>
+</html>

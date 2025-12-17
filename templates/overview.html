@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>System Overview</h1>
+<div class="cards">
+    <div class="card">Model: Random Forest</div>
+    <div class="card">Accuracy: 96%</div>
+    <div class="card">Detections: {{ total }}</div>
+</div>
+<p>This dashboard monitors UAV communication security using supervised ML.</p>
+{% endblock %}

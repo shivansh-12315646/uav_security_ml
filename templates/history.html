@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Detection History</h1>
+<table>
+<tr><th>Time</th><th>Input</th><th>Result</th></tr>
+{% for h in history %}
+<tr>
+<td>{{ h.time }}</td>
+<td>{{ h.features }}</td>
+<td>{{ h.result }}</td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}

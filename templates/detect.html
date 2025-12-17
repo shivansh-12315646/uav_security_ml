@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Live Detection</h1>
+
+<form method="POST">
+<input name="packet_size" placeholder="Packet Size" required>
+<input name="inter_arrival" placeholder="Inter-arrival Time" required>
+<input name="packet_rate" placeholder="Packet Rate" required>
+<input name="duration" placeholder="Connection Duration" required>
+<input name="failed_logins" placeholder="Failed Logins" required>
+<button type="submit">Analyze</button>
+</form>
+
+{% if prediction %}
+<div class="alert {{ prediction }}">
+    {{ prediction | upper }}
+</div>
+{% endif %}
+{% endblock %}

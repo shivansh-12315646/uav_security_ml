@@ -1,0 +1,59 @@
+body {
+    margin: 0;
+    background: #0b1120;
+    color: #e5e7eb;
+    font-family: Segoe UI, Arial;
+}
+
+.container {
+    display: flex;
+}
+
+.sidebar {
+    width: 220px;
+    background: #020617;
+    padding: 20px;
+    height: 100vh;
+}
+
+.sidebar a {
+    display: block;
+    color: #93c5fd;
+    margin: 10px 0;
+    text-decoration: none;
+}
+
+.content {
+    padding: 30px;
+    flex: 1;
+}
+
+.cards {
+    display: flex;
+    gap: 20px;
+}
+
+.card {
+    background: #020617;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.alert {
+    margin-top: 20px;
+    padding: 15px;
+    font-weight: bold;
+}
+
+.attack { background: #dc2626; }
+.normal { background: #16a34a; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+td, th {
+    border: 1px solid #334155;
+    padding: 10px;
+}

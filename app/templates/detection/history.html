@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Detection History - UAV Security ML{% endblock %}
+{% block page_title %}Detection History{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5><i class="fas fa-history"></i> All Detections</h5>
+        <div>
+            <form method="GET" class="d-inline">
+                <select name="prediction" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()">
+                    <option value="">All Predictions</option>
+                    <option value="Normal" {% if prediction_filter == 'Normal' %}selected{% endif %}>Normal</option>
+                    <option value="Threat" {% if prediction_filter == 'Threat' %}selected{% endif %}>Threat</option>
+                </select>
+                
+                <select name="threat_level" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()">
+                    <option value="">All Threat Levels</option>
+                    <option value="Low" {% if threat_level_filter == 'Low' %}selected{% endif %}>Low</option>
+                    <option value="Medium" {% if threat_level_filter == 'Medium' %}selected{% endif %}>Medium</option>
+                    <option value="High" {% if threat_level_filter == 'High' %}selected{% endif %}>High</option>
+                    <option value="Critical" {% if threat_level_filter == 'Critical' %}selected{% endif %}>Critical</option>
+                </select>
+            </form>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Timestamp</th>
+                        <th>Prediction</th>
+                        <th>Confidence</th>
+                        <th>Threat Level</th>
+                        <th>Model</th>
+                        <th>User</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detection in detections %}
+                    <tr>
+                        <td>#{{ detection.id }}</td>
+                        <td>{{ detection.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>
+                            {% if detection.prediction == 'Threat' %}
+                            <span class="badge bg-danger">{{ detection.prediction }}</span>
+                            {% else %}
+                            <span class="badge bg-success">{{ detection.prediction }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ "%.1f"|format(detection.confidence * 100) }}%</td>
+                        <td>
+                            {% if detection.threat_level == 'Critical' %}
+                            <span class="badge bg-danger">{{ detection.threat_level }}</span>
+                            {% elif detection.threat_level == 'High' %}
+                            <span class="badge bg-warning">{{ detection.threat_level }}</span>
+                            {% elif detection.threat_level == 'Medium' %}
+                            <span class="badge bg-info">{{ detection.threat_level }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ detection.threat_level }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ detection.model_version or 'N/A' }}</td>
+                        <td>{{ detection.user.username if detection.user else 'System' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('detection.history', page=pagination.prev_num) if pagination.has_prev else '#' }}">Previous</a>
+                </li>
+                
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if page_num %}
+                    <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('detection.history', page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('detection.history', page=pagination.next_num) if pagination.has_next else '#' }}">Next</a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

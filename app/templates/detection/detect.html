@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Live Detection - UAV Security ML{% endblock %}
+{% block page_title %}Live UAV Threat Detection{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-radar"></i> Enter UAV Data</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('detection.detect') }}">
+                    <div class="mb-3">
+                        <label for="packet_size" class="form-label">Packet Size (bytes)</label>
+                        <input type="number" step="0.01" class="form-control" id="packet_size" name="packet_size" required 
+                               placeholder="e.g., 512">
+                        <small class="form-text text-muted">Normal: 480-530, Attack: 1500-1700</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="inter_arrival" class="form-label">Inter-arrival Time (seconds)</label>
+                        <input type="number" step="0.01" class="form-control" id="inter_arrival" name="inter_arrival" required
+                               placeholder="e.g., 0.02">
+                        <small class="form-text text-muted">Normal: 0.01-0.03, Attack: 0.45-0.60</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="packet_rate" class="form-label">Packet Rate (packets/sec)</label>
+                        <input type="number" step="0.01" class="form-control" id="packet_rate" name="packet_rate" required
+                               placeholder="e.g., 120">
+                        <small class="form-text text-muted">Normal: 110-130, Attack: 850-950</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="duration" class="form-label">Connection Duration (seconds)</label>
+                        <input type="number" step="0.01" class="form-control" id="duration" name="duration" required
+                               placeholder="e.g., 15">
+                        <small class="form-text text-muted">Normal: 15-20, Attack: 2-4</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="failed_logins" class="form-label">Failed Login Attempts</label>
+                        <input type="number" step="1" class="form-control" id="failed_logins" name="failed_logins" required
+                               placeholder="e.g., 0">
+                        <small class="form-text text-muted">Normal: 0, Attack: 5-9</small>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Detect Threat
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        {% if prediction %}
+        <div class="card border-{{ 'success' if prediction.prediction == 'Normal' else 'danger' }}">
+            <div class="card-header bg-{{ 'success' if prediction.prediction == 'Normal' else 'danger' }} text-white">
+                <h5><i class="fas fa-{{ 'check-circle' if prediction.prediction == 'Normal' else 'exclamation-triangle' }}"></i> Detection Result</h5>
+            </div>
+            <div class="card-body">
+                <h2 class="text-{{ 'success' if prediction.prediction == 'Normal' else 'danger' }}">
+                    {{ prediction.prediction }}
+                </h2>
+                
+                <div class="mt-3">
+                    <h6>Details:</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Confidence:</th>
+                            <td>{{ "%.2f"|format(prediction.confidence * 100) }}%</td>
+                        </tr>
+                        <tr>
+                            <th>Threat Level:</th>
+                            <td>
+                                <span class="badge bg-{{ 'danger' if prediction.threat_level == 'Critical' else ('warning' if prediction.threat_level == 'High' else 'info') }}">
+                                    {{ prediction.threat_level }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Model Used:</th>
+                            <td>{{ prediction.model_used }}</td>
+                        </tr>
+                        <tr>
+                            <th>Detection ID:</th>
+                            <td>#{{ prediction.detection_id }}</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                {% if prediction.prediction == 'Threat' %}
+                <div class="alert alert-danger mt-3">
+                    <strong>⚠️ Security Alert!</strong><br>
+                    A potential threat has been detected. Immediate investigation recommended.
+                </div>
+                {% else %}
+                <div class="alert alert-success mt-3">
+                    <strong>✓ All Clear</strong><br>
+                    No threat detected. UAV communication appears normal.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> Instructions</h5>
+            </div>
+            <div class="card-body">
+                <h6>How to use:</h6>
+                <ol>
+                    <li>Enter the UAV communication parameters in the form</li>
+                    <li>Click "Detect Threat" to analyze the data</li>
+                    <li>Review the prediction result and confidence score</li>
+                    <li>Take appropriate action based on the threat level</li>
+                </ol>
+                
+                <h6 class="mt-3">Parameter Ranges:</h6>
+                <ul class="small">
+                    <li><strong>Normal traffic:</strong> Small packets, low inter-arrival time, moderate rate</li>
+                    <li><strong>Attack traffic:</strong> Large packets, high inter-arrival time, high rate, failed logins</li>
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

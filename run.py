@@ -13,5 +13,7 @@ from app import create_app
 app = create_app()
 
 if __name__ == '__main__':
-    # Run with standard Flask (SocketIO disabled for now)
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Run with standard Flask
+    # Debug mode controlled by FLASK_ENV environment variable
+    debug_mode = os.getenv('FLASK_ENV', 'production') == 'development'
+    app.run(debug=debug_mode, host='0.0.0.0', port=5000)

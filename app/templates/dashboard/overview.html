@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - UAV Security ML{% endblock %}
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block content %}
+<!-- Metrics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase mb-0">Total Detections</h6>
+                        <h2 class="mb-0">{{ total_detections }}</h2>
+                        <small>+{{ detections_today }} today</small>
+                    </div>
+                    <i class="fas fa-radar fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase mb-0">Threats Detected</h6>
+                        <h2 class="mb-0">{{ total_threats }}</h2>
+                        <small>+{{ threats_today }} today</small>
+                    </div>
+                    <i class="fas fa-exclamation-triangle fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase mb-0">Active Alerts</h6>
+                        <h2 class="mb-0">{{ active_alerts }}</h2>
+                        <small>{{ critical_alerts }} critical</small>
+                    </div>
+                    <i class="fas fa-bell fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase mb-0">Threat Rate</h6>
+                        <h2 class="mb-0">{{ "%.1f"|format(threat_rate) }}%</h2>
+                        <small>Avg confidence: {{ "%.1f"|format(avg_confidence * 100) }}%</small>
+                    </div>
+                    <i class="fas fa-chart-line fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-area"></i> Detection Trend (Last 7 Days)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="detectionTrendChart" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-robot"></i> Active Model</h5>
+            </div>
+            <div class="card-body">
+                {% if active_model %}
+                <h6>{{ active_model.name }}</h6>
+                <p class="mb-1"><strong>Version:</strong> {{ active_model.version }}</p>
+                <p class="mb-1"><strong>Accuracy:</strong> {{ "%.2f"|format(active_model.accuracy * 100) if active_model.accuracy else 'N/A' }}%</p>
+                <p class="mb-1"><strong>F1 Score:</strong> {{ "%.2f"|format(active_model.f1_score) if active_model.f1_score else 'N/A' }}</p>
+                {% else %}
+                <p class="text-muted">No active model found</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-history"></i> Recent Detections</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Prediction</th>
+                                <th>Confidence</th>
+                                <th>Threat Level</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for detection in recent_detections %}
+                            <tr>
+                                <td>{{ detection.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                <td>
+                                    {% if detection.prediction == 'Threat' %}
+                                    <span class="badge bg-danger">{{ detection.prediction }}</span>
+                                    {% else %}
+                                    <span class="badge bg-success">{{ detection.prediction }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ "%.1f"|format(detection.confidence * 100) }}%</td>
+                                <td>
+                                    {% if detection.threat_level == 'Critical' %}
+                                    <span class="badge bg-danger">{{ detection.threat_level }}</span>
+                                    {% elif detection.threat_level == 'High' %}
+                                    <span class="badge bg-warning">{{ detection.threat_level }}</span>
+                                    {% else %}
+                                    <span class="badge bg-info">{{ detection.threat_level }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-exclamation-circle"></i> Recent Alerts</h5>
+            </div>
+            <div class="card-body">
+                {% for alert in recent_alerts %}
+                <div class="alert alert-{{ 'danger' if alert.severity == 'Critical' else 'warning' }} py-2 mb-2">
+                    <strong>{{ alert.severity }}</strong> - {{ alert.status }}<br>
+                    <small>{{ alert.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                </div>
+                {% else %}
+                <p class="text-muted">No recent alerts</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Detection Trend Chart
+const trendData = {{ detection_trend | tojson }};
+const ctx = document.getElementById('detectionTrendChart').getContext('2d');
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: trendData.map(d => d.date),
+        datasets: [{
+            label: 'Detections',
+            data: trendData.map(d => d.count),
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

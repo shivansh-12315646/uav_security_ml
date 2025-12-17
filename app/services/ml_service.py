@@ -6,7 +6,6 @@ import os
 import joblib
 import numpy as np
 from datetime import datetime
-from flask import current_app
 
 
 class MLService:
@@ -17,33 +16,45 @@ class MLService:
         self.models = {}
         self.scaler = None
         self.active_model_name = None
-        self.load_models()
+        self._app = None
+    
+    def init_app(self, app):
+        """Initialize with Flask app context."""
+        self._app = app
+        with app.app_context():
+            self.load_models()
     
     def load_models(self):
         """Load all available models and scaler."""
         try:
-            # Load scaler
-            scaler_path = os.path.join(os.path.dirname(current_app.root_path), 'scaler.pkl')
+            # Load scaler from old location
+            if self._app:
+                base_path = os.path.dirname(self._app.root_path)
+            else:
+                base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            
+            scaler_path = os.path.join(base_path, 'scaler.pkl')
             if os.path.exists(scaler_path):
                 self.scaler = joblib.load(scaler_path)
             
             # Load default model from old location
-            old_model_path = os.path.join(os.path.dirname(current_app.root_path), 'model', 'uav_security_model.pkl')
+            old_model_path = os.path.join(base_path, 'model', 'uav_security_model.pkl')
             if os.path.exists(old_model_path):
                 self.models['RandomForest'] = joblib.load(old_model_path)
                 self.active_model_name = 'RandomForest'
             
-            # Load models from new location
-            models_dir = current_app.config.get('ML_MODELS_FOLDER')
-            if os.path.exists(models_dir):
-                for filename in os.listdir(models_dir):
-                    if filename.endswith('.pkl') or filename.endswith('.joblib'):
-                        model_name = filename.rsplit('.', 1)[0]
-                        model_path = os.path.join(models_dir, filename)
-                        try:
-                            self.models[model_name] = joblib.load(model_path)
-                        except Exception as e:
-                            print(f"Error loading model {model_name}: {e}")
+            # Load models from new location if app context available
+            if self._app and self._app.config.get('ML_MODELS_FOLDER'):
+                models_dir = self._app.config.get('ML_MODELS_FOLDER')
+                if os.path.exists(models_dir):
+                    for filename in os.listdir(models_dir):
+                        if filename.endswith('.pkl') or filename.endswith('.joblib'):
+                            model_name = filename.rsplit('.', 1)[0]
+                            model_path = os.path.join(models_dir, filename)
+                            try:
+                                self.models[model_name] = joblib.load(model_path)
+                            except Exception as e:
+                                print(f"Error loading model {model_name}: {e}")
             
             if not self.active_model_name and self.models:
                 self.active_model_name = list(self.models.keys())[0]

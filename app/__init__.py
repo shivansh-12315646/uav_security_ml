@@ -5,7 +5,7 @@ Creates and configures the Flask application with all extensions and blueprints.
 import os
 from flask import Flask, render_template
 from config import config
-from app.extensions import init_extensions, db
+from app.extensions import init_extensions, db, socketio
 
 
 def create_app(config_name=None):
@@ -26,6 +26,10 @@ def create_app(config_name=None):
     
     # Initialize extensions
     init_extensions(app)
+    
+    # Initialize ML service
+    from app.services.ml_service import ml_service
+    ml_service.init_app(app)
     
     # Register blueprints
     register_blueprints(app)
@@ -122,3 +126,7 @@ def create_default_admin():
         admin = User(username=username, email=email, password=password, role='admin')
         db.session.add(admin)
         db.session.commit()
+
+
+# Export socketio for use in run.py
+__all__ = ['create_app', 'socketio']

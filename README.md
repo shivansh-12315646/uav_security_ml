@@ -421,7 +421,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 👥 Authors
 
-- **Your Name** - Initial work
+- **Shivansh Sharma** - Initial work
 
 ---
 
@@ -436,7 +436,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 📧 Contact
 
-For questions or support, please open an issue on GitHub or contact: your.email@example.com
+For questions or support, please open an issue on GitHub or contact: shivanshsep16@gmail.com
 
 ---
 

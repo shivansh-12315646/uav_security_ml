@@ -39,3 +39,32 @@ td, th {
     border: 1px solid #334155;
     padding: 10px;
 }
+
+/* Threat badges */
+.threat-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.threat-badge.critical {
+    background: #dc2626;
+    color: white;
+}
+
+.threat-badge.high {
+    background: #f97316;
+    color: white;
+}
+
+.threat-badge.medium {
+    background: #eab308;
+    color: black;
+}
+
+.threat-badge.low {
+    background: #10b981;
+    color: white;
+}

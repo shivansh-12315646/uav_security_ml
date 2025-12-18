@@ -1,35 +1,62 @@
 import pandas as pd
 import numpy as np
 
+# Configuration constants for dataset generation
+RANDOM_SEED = 42  # For reproducibility
+
+# Sample counts
+NORMAL_SAMPLES = 10000
+ATTACK_SAMPLES = 3000
+
+# Normal traffic characteristics
+NORMAL_PACKET_SIZE_MIN = 480
+NORMAL_PACKET_SIZE_MAX = 550
+NORMAL_INTER_ARRIVAL_MIN = 0.01
+NORMAL_INTER_ARRIVAL_MAX = 0.05
+NORMAL_PACKET_RATE_MIN = 100
+NORMAL_PACKET_RATE_MAX = 150
+NORMAL_DURATION_MIN = 15
+NORMAL_DURATION_MAX = 25
+
+# Attack traffic characteristics
+ATTACK_PACKET_SIZE_MIN = 1400
+ATTACK_PACKET_SIZE_MAX = 1800
+ATTACK_INTER_ARRIVAL_MIN = 0.40
+ATTACK_INTER_ARRIVAL_MAX = 0.70
+ATTACK_PACKET_RATE_MIN = 800
+ATTACK_PACKET_RATE_MAX = 1000
+ATTACK_DURATION_MIN = 1
+ATTACK_DURATION_MAX = 5
+ATTACK_FAILED_LOGINS_MIN = 5
+ATTACK_FAILED_LOGINS_MAX = 15
+
 # Set seed for reproducibility (using 42 for consistent results across runs)
-np.random.seed(42)
+np.random.seed(RANDOM_SEED)
 
 print("🚀 Generating UAV Security Dataset...")
 
-# Generate NORMAL traffic (10,000 samples)
-normal_samples = 10000
-print(f"\n📊 Creating {normal_samples} NORMAL traffic samples...")
+# Generate NORMAL traffic
+print(f"\n📊 Creating {NORMAL_SAMPLES} NORMAL traffic samples...")
 
 normal_data = {
-    'packet_size': np.random.randint(480, 550, normal_samples),
-    'inter_arrival_time': np.round(np.random.uniform(0.01, 0.05, normal_samples), 3),
-    'packet_rate': np.random.randint(100, 150, normal_samples),
-    'connection_duration': np.random.randint(15, 25, normal_samples),
-    'failed_logins': np.random.choice([0, 1], normal_samples, p=[0.95, 0.05]),
-    'label': ['normal'] * normal_samples
+    'packet_size': np.random.randint(NORMAL_PACKET_SIZE_MIN, NORMAL_PACKET_SIZE_MAX, NORMAL_SAMPLES),
+    'inter_arrival_time': np.round(np.random.uniform(NORMAL_INTER_ARRIVAL_MIN, NORMAL_INTER_ARRIVAL_MAX, NORMAL_SAMPLES), 3),
+    'packet_rate': np.random.randint(NORMAL_PACKET_RATE_MIN, NORMAL_PACKET_RATE_MAX, NORMAL_SAMPLES),
+    'connection_duration': np.random.randint(NORMAL_DURATION_MIN, NORMAL_DURATION_MAX, NORMAL_SAMPLES),
+    'failed_logins': np.random.choice([0, 1], NORMAL_SAMPLES, p=[0.95, 0.05]),
+    'label': ['normal'] * NORMAL_SAMPLES
 }
 
-# Generate ATTACK traffic (3,000 samples)
-attack_samples = 3000
-print(f"🚨 Creating {attack_samples} ATTACK traffic samples...")
+# Generate ATTACK traffic
+print(f"🚨 Creating {ATTACK_SAMPLES} ATTACK traffic samples...")
 
 attack_data = {
-    'packet_size': np.random.randint(1400, 1800, attack_samples),
-    'inter_arrival_time': np.round(np.random.uniform(0.40, 0.70, attack_samples), 3),
-    'packet_rate': np.random.randint(800, 1000, attack_samples),
-    'connection_duration': np.random.randint(1, 5, attack_samples),
-    'failed_logins': np.random.randint(5, 15, attack_samples),
-    'label': ['attack'] * attack_samples
+    'packet_size': np.random.randint(ATTACK_PACKET_SIZE_MIN, ATTACK_PACKET_SIZE_MAX, ATTACK_SAMPLES),
+    'inter_arrival_time': np.round(np.random.uniform(ATTACK_INTER_ARRIVAL_MIN, ATTACK_INTER_ARRIVAL_MAX, ATTACK_SAMPLES), 3),
+    'packet_rate': np.random.randint(ATTACK_PACKET_RATE_MIN, ATTACK_PACKET_RATE_MAX, ATTACK_SAMPLES),
+    'connection_duration': np.random.randint(ATTACK_DURATION_MIN, ATTACK_DURATION_MAX, ATTACK_SAMPLES),
+    'failed_logins': np.random.randint(ATTACK_FAILED_LOGINS_MIN, ATTACK_FAILED_LOGINS_MAX, ATTACK_SAMPLES),
+    'label': ['attack'] * ATTACK_SAMPLES
 }
 
 # Combine into DataFrame
@@ -39,7 +66,7 @@ df = pd.concat([df_normal, df_attack], ignore_index=True)
 
 # Shuffle the data
 print("\n🔀 Shuffling data...")
-df = df.sample(frac=1, random_state=42).reset_index(drop=True)
+df = df.sample(frac=1, random_state=RANDOM_SEED).reset_index(drop=True)
 
 # Save to CSV
 print("💾 Saving to uav_data.csv...")

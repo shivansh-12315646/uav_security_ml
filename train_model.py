@@ -1,5 +1,9 @@
 import pandas as pd
 import numpy as np
+
+# Configuration constants
+MAX_CPU_CORES = 4  # Maximum CPU cores to use for training
+
 import sys
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -49,7 +53,7 @@ print("✅ Scaling complete\n")
 # Train Random Forest model
 print("🌲 Training Random Forest Classifier (100 trees)...")
 # Use conservative CPU allocation to avoid resource contention
-n_jobs = min(4, os.cpu_count() or 1)
+n_jobs = min(MAX_CPU_CORES, os.cpu_count() or 1)
 model = RandomForestClassifier(
     n_estimators=100,
     random_state=42,
@@ -79,9 +83,8 @@ print(f"   True Positives:  {cm[1][1]}")
 
 # Feature importance
 print("\n🔍 Feature Importance:")
-feature_names = ['packet_size', 'inter_arrival_time', 'packet_rate', 'connection_duration', 'failed_logins']
 importances = model.feature_importances_
-for name, importance in sorted(zip(feature_names, importances), key=lambda x: x[1], reverse=True):
+for name, importance in sorted(zip(feature_columns, importances), key=lambda x: x[1], reverse=True):
     print(f"   {name:25} {importance*100:.2f}%")
 
 # Create model directory if it doesn't exist

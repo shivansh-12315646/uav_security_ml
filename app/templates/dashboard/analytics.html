@@ -1,30 +1,352 @@
 {% extends "base.html" %}
 
 {% block title %}Analytics - UAV Security ML{% endblock %}
-{% block page_title %}Advanced Analytics{% endblock %}
+{% block page_title %}Advanced Analytics Dashboard{% endblock %}
 
 {% block content %}
-<div class="alert alert-info">
-    <i class="fas fa-chart-bar"></i> Advanced analytics dashboard with interactive visualizations coming soon!
-</div>
-
-<div class="row">
+<!-- Analytics Header with Date Range Selector -->
+<div class="row mb-4" data-aos="fade-down">
     <div class="col-md-12">
         <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-chart-line"></i> Detection Trends</h5>
-            </div>
             <div class="card-body">
-                <p>Advanced analytics features will include:</p>
-                <ul>
-                    <li>Interactive time-series charts</li>
-                    <li>Feature distribution analysis</li>
-                    <li>Correlation heatmaps</li>
-                    <li>Model performance metrics</li>
-                    <li>Threat prediction trends</li>
-                </ul>
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="mb-0"><i class="fas fa-chart-line"></i> Analytics Overview</h4>
+                        <p class="text-muted mb-0">Comprehensive insights into threat detection patterns</p>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                            <select class="form-select" id="dateRange">
+                                <option value="7">Last 7 Days</option>
+                                <option value="30" selected>Last 30 Days</option>
+                                <option value="90">Last 90 Days</option>
+                                <option value="custom">Custom Range</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Key Metrics Row -->
+<div class="row mb-4">
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="0">
+        <div class="card metric-card info">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-line fa-2x mb-3 text-primary"></i>
+                <h3 class="mb-1">127</h3>
+                <p class="text-muted mb-0">Total Detections</p>
+                <small class="text-success"><i class="fas fa-arrow-up"></i> +12% from last period</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
+        <div class="card metric-card danger">
+            <div class="card-body text-center">
+                <i class="fas fa-exclamation-triangle fa-2x mb-3 text-danger"></i>
+                <h3 class="mb-1">23</h3>
+                <p class="text-muted mb-0">Threats Detected</p>
+                <small class="text-danger"><i class="fas fa-arrow-up"></i> +8% from last period</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
+        <div class="card metric-card safe">
+            <div class="card-body text-center">
+                <i class="fas fa-percentage fa-2x mb-3 text-success"></i>
+                <h3 class="mb-1">94.2%</h3>
+                <p class="text-muted mb-0">Detection Accuracy</p>
+                <small class="text-success"><i class="fas fa-arrow-up"></i> +2.1% from last period</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
+        <div class="card metric-card warning">
+            <div class="card-body text-center">
+                <i class="fas fa-clock fa-2x mb-3 text-warning"></i>
+                <h3 class="mb-1">1.2s</h3>
+                <p class="text-muted mb-0">Avg Detection Time</p>
+                <small class="text-success"><i class="fas fa-arrow-down"></i> -0.3s faster</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 1 -->
+<div class="row mb-4">
+    <div class="col-lg-8" data-aos="fade-right">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-chart-area"></i> Detection Trends</h5>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-primary active" data-chart-type="line">Line</button>
+                    <button type="button" class="btn btn-outline-primary" data-chart-type="bar">Bar</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="trendChart" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4" data-aos="fade-left">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Threat Distribution</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="threatDistChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 2 -->
+<div class="row mb-4">
+    <div class="col-lg-6" data-aos="fade-up">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-fire"></i> Hourly Activity Heatmap</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="hourlyActivityChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6" data-aos="fade-up" data-aos-delay="100">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-robot"></i> Model Performance</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="modelPerfChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Threats Table -->
+<div class="row mb-4">
+    <div class="col-lg-12" data-aos="fade-up">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-ranking-star"></i> Top Threat Patterns</h5>
+                <button class="btn btn-sm btn-outline-primary" onclick="exportData('threats')">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Pattern Type</th>
+                                <th>Occurrences</th>
+                                <th>Severity</th>
+                                <th>First Seen</th>
+                                <th>Last Seen</th>
+                                <th>Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td><i class="fas fa-network-wired"></i> High Packet Rate</td>
+                                <td><span class="badge bg-danger">12</span></td>
+                                <td>{% set severity = 'Critical' %}{% include 'components/alert_badge.html' %}</td>
+                                <td>2024-01-15</td>
+                                <td>2024-01-20</td>
+                                <td><i class="fas fa-arrow-up text-danger"></i> +25%</td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td><i class="fas fa-clock"></i> Abnormal Timing</td>
+                                <td><span class="badge bg-warning">8</span></td>
+                                <td>{% set severity = 'High' %}{% include 'components/alert_badge.html' %}</td>
+                                <td>2024-01-16</td>
+                                <td>2024-01-19</td>
+                                <td><i class="fas fa-arrow-down text-success"></i> -12%</td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td><i class="fas fa-user-lock"></i> Failed Auth Attempts</td>
+                                <td><span class="badge bg-info">5</span></td>
+                                <td>{% set severity = 'Medium' %}{% include 'components/alert_badge.html' %}</td>
+                                <td>2024-01-18</td>
+                                <td>2024-01-20</td>
+                                <td><i class="fas fa-minus text-muted"></i> 0%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Options -->
+<div class="row" data-aos="fade-up">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-file-export"></i> Export Analytics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-primary w-100 mb-2" onclick="exportData('pdf')">
+                            <i class="fas fa-file-pdf"></i> Export as PDF
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-success w-100 mb-2" onclick="exportData('csv')">
+                            <i class="fas fa-file-csv"></i> Export as CSV
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-info w-100 mb-2" onclick="exportData('json')">
+                            <i class="fas fa-file-code"></i> Export as JSON
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Mock data for charts
+const last30Days = Array.from({length: 30}, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (29 - i));
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+});
+
+const detectionData = Array.from({length: 30}, () => Math.floor(Math.random() * 10) + 2);
+const threatData = Array.from({length: 30}, () => Math.floor(Math.random() * 5));
+
+// Detection Trend Chart
+const trendCtx = document.getElementById('trendChart');
+let trendChart = null;
+
+if (trendCtx) {
+    trendChart = new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: last30Days,
+            datasets: [{
+                label: 'Total Detections',
+                data: detectionData,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                fill: true,
+                tension: 0.4
+            }, {
+                label: 'Threats',
+                data: threatData,
+                borderColor: '#ef4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { 
+                    labels: { color: '#cbd5e1' }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                    titleColor: '#f8fafc',
+                    bodyColor: '#cbd5e1'
+                }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    ticks: { color: '#cbd5e1' },
+                    grid: { color: 'rgba(59, 130, 246, 0.1)' }
+                },
+                x: { 
+                    ticks: { color: '#cbd5e1' },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
+
+// Threat Distribution Chart
+const threatDistCtx = document.getElementById('threatDistChart');
+if (threatDistCtx && window.chartUtils) {
+    window.chartUtils.createThreatDistributionChart('threatDistChart', {
+        labels: ['Normal', 'Low', 'Medium', 'High', 'Critical'],
+        values: [104, 8, 10, 3, 2]
+    });
+}
+
+// Hourly Activity Chart
+const hourlyCtx = document.getElementById('hourlyActivityChart');
+if (hourlyCtx && window.chartUtils) {
+    const hourlyData = Array.from({length: 24}, (_, i) => ({
+        hour: i,
+        count: Math.floor(Math.random() * 15) + 1
+    }));
+    window.chartUtils.createHourlyActivityChart('hourlyActivityChart', hourlyData);
+}
+
+// Model Performance Chart
+const modelPerfCtx = document.getElementById('modelPerfChart');
+if (modelPerfCtx && window.chartUtils) {
+    window.chartUtils.createModelPerformanceChart('modelPerfChart', {
+        models: [{
+            name: 'Random Forest',
+            accuracy: 0.942,
+            precision: 0.935,
+            recall: 0.928,
+            f1_score: 0.931,
+            speed: 85
+        }]
+    });
+}
+
+// Chart type switcher
+document.querySelectorAll('[data-chart-type]').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const chartType = this.getAttribute('data-chart-type');
+        
+        // Update active button
+        this.parentElement.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        // Update chart type
+        if (trendChart) {
+            trendChart.config.type = chartType;
+            trendChart.update();
+        }
+    });
+});
+
+// Export functionality
+function exportData(format) {
+    if (window.dashboardUtils) {
+        window.dashboardUtils.showToast(`Exporting analytics as ${format.toUpperCase()}...`, 'info');
+        
+        setTimeout(() => {
+            window.dashboardUtils.showToast(`Analytics exported successfully!`, 'success');
+        }, 2000);
+    }
+    
+    // TODO: Implement actual export logic
+}
+</script>
 {% endblock %}

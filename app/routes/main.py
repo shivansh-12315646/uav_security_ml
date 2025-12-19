@@ -102,3 +102,10 @@ def dashboard():
                          recent_alerts=recent_alerts,
                          active_model=active_model,
                          detection_trend=detection_trend)
+
+
+@main_bp.route('/algorithms')
+def algorithms():
+    """ML algorithms comparison page."""
+    return render_template('algorithms.html')
+

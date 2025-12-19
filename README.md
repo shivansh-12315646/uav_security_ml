@@ -151,6 +151,61 @@ DATABASE_URL=postgresql://username:password@localhost:5432/uav_security
 
 ## 📖 Usage
 
+### Application Entry Points
+
+This project provides two entry points for running the application:
+
+#### **1. run.py (RECOMMENDED - Full Application)**
+
+The primary entry point for the complete, production-ready application with all features:
+
+```bash
+python run.py
+```
+
+**Features:**
+- ✅ User authentication and authorization (login required)
+- ✅ Database persistence (all data saved to database)
+- ✅ Alert system with severity levels
+- ✅ Advanced analytics dashboard
+- ✅ Admin panel for user management
+- ✅ RESTful API endpoints
+- ✅ CSRF protection for all forms
+- ✅ Real-time updates via WebSocket
+- ✅ Rate limiting and security features
+- ✅ Session management
+
+**Access:** `http://localhost:5000`
+
+**Default Credentials:**
+- Username: `admin`
+- Password: `admin123`
+
+#### **2. app.py (DEMO - Simplified Version)**
+
+A lightweight demo version for testing basic ML functionality:
+
+```bash
+python app.py
+```
+
+**Features:**
+- ⚠️ No authentication (open access)
+- ⚠️ In-memory storage only (data lost on restart)
+- ⚠️ No database persistence
+- ⚠️ Limited to basic detection routes
+- ⚠️ No CSRF protection
+- ✅ Quick testing of ML models
+- ✅ Simpler codebase for learning
+
+**Use Cases:**
+- Quick demonstrations
+- Learning the basic ML prediction flow
+- Development/debugging of core ML functionality
+- Testing without database setup
+
+**⚠️ WARNING:** `app.py` is NOT suitable for production use. Always use `run.py` for production deployments.
+
 ### User Roles
 
 1. **Admin** - Full system access, user management, system settings

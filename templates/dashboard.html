@@ -16,6 +16,7 @@
     <h2>🔍 Live Communication Analysis</h2>
 
     <form method="POST">
+        {{ csrf_token() }}
         <input name="packet_size" placeholder="Packet Size" required>
         <input name="inter_arrival" placeholder="Inter-arrival Time" required>
         <input name="packet_rate" placeholder="Packet Rate" required>

@@ -51,11 +51,13 @@
                         <td>
                             {% if alert.status == 'Open' %}
                             <form method="POST" action="{{ url_for('alerts.acknowledge_alert', alert_id=alert.id) }}" class="d-inline">
+                                {{ csrf_token() }}
                                 <button type="submit" class="btn btn-sm btn-warning">Acknowledge</button>
                             </form>
                             {% endif %}
                             {% if alert.status in ['Open', 'Acknowledged'] %}
                             <form method="POST" action="{{ url_for('alerts.resolve_alert', alert_id=alert.id) }}" class="d-inline">
+                                {{ csrf_token() }}
                                 <button type="submit" class="btn btn-sm btn-success">Resolve</button>
                             </form>
                             {% endif %}

@@ -401,6 +401,60 @@ socketio.run(app, debug=True, host='0.0.0.0', port=5001)
 
 ---
 
+## 📊 Dataset Generation
+
+This project uses a **synthetic dataset** that simulates realistic UAV network traffic patterns.
+
+### Generate Dataset
+
+```bash
+# Generate 13,000 samples (10,000 normal + 3,000 attack)
+python generate_data.py
+```
+
+**Dataset Features:**
+- `packet_size`: Size of network packets (bytes)
+- `inter_arrival_time`: Time between packets (milliseconds)
+- `packet_rate`: Number of packets per second
+- `connection_duration`: Length of connection session (seconds)
+- `failed_logins`: Number of failed authentication attempts
+- `label`: Classification (normal/attack)
+
+**Normal Traffic Characteristics:**
+- Packet Size: 480-550 bytes
+- Inter-Arrival Time: 0.01-0.05ms
+- Packet Rate: 100-150 packets/sec
+- Duration: 15-25 seconds
+- Failed Logins: 0-1
+
+**Attack Traffic Characteristics:**
+- Packet Size: 1400-1800 bytes (flooding)
+- Inter-Arrival Time: 0.40-0.70ms (irregular)
+- Packet Rate: 800-1000 packets/sec (DDoS)
+- Duration: 1-5 seconds (hit-and-run)
+- Failed Logins: 5-15 (brute force)
+
+### Train Model
+
+```bash
+# Train Random Forest model with 80-20 split
+python train_model.py
+```
+
+**Expected Output:**
+- Training samples: 10,400
+- Test samples: 2,600
+- Model Accuracy: ~95%
+- Saved to: `model/uav_security_model.pkl`
+
+## 🎓 Academic Note
+
+This synthetic dataset is created for **educational purposes** to demonstrate machine learning methodology. In production deployment, this would be replaced with real UAV network traffic data collected from actual drone communication systems.
+
+The dataset generation is based on research of network intrusion detection patterns and UAV communication protocols, ensuring realistic value ranges and attack characteristics.
+
+---
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please follow these steps:

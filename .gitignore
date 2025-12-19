@@ -69,6 +69,11 @@ ml_models/saved_models/*.h5
 ml_models/saved_models/*.joblib
 !ml_models/saved_models/.gitkeep
 
+# Generated dataset and model files (users should generate these)
+uav_data.csv
+model/uav_security_model.pkl
+scaler.pkl
+
 # Testing
 .pytest_cache/
 .coverage

@@ -297,10 +297,14 @@ function updateMetricBar(barId, percentage) {
  * Play alert sound
  */
 function playAlertSound() {
-    const audio = new Audio('/static/sounds/alert.mp3');
+    // Check if audio file exists before playing
+    const soundPath = '/static/sounds/alert.mp3';
+    const audio = new Audio(soundPath);
     audio.volume = 0.5;
+    
+    // Attempt to play, fail silently if file doesn't exist
     audio.play().catch(error => {
-        console.log('Could not play alert sound:', error);
+        console.log('Alert sound not available. Sound file may need to be added to', soundPath);
     });
 }
 

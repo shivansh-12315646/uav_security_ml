@@ -101,5 +101,9 @@ package-lock.json
 *.swp
 tmp/
 
+# Build output
+build/
+.netlify/
+
 # Docker
 .dockerignore

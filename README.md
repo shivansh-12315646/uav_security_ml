@@ -1,5 +1,12 @@
 # UAV Security with Machine Learning
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/your-site-id/deploy-status)](https://app.netlify.com/sites/your-site-name/deploys)
+[![Python Version](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/)
+[![Flask](https://img.shields.io/badge/flask-3.0.0-green.svg)](https://flask.palletsprojects.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+> **Advanced Machine Learning System for UAV Threat Detection and Security Analysis**
+
 ## Modernized Features
 
 UAV Security with Machine Learning is packed with premium-grade features, including:

@@ -4,7 +4,8 @@
 
 [build]
   # Build command - creates static assets
-  command = "pip install -r requirements.txt && python build_static.py"
+  # Uses minimal requirements for faster builds
+  command = "python build_static.py"
   
   # Publish directory - where the static site is built
   publish = "build"
@@ -47,11 +48,11 @@
 
 # Deploy previews configuration
 [context.deploy-preview]
-  command = "pip install -r requirements.txt && python build_static.py"
+  command = "python build_static.py"
 
 # Branch deploys configuration  
 [context.branch-deploy]
-  command = "pip install -r requirements.txt && python build_static.py"
+  command = "python build_static.py"
 
 # Development context
 [context.development.environment]

@@ -31,6 +31,10 @@ def create_app(config_name=None):
     from app.services.ml_service import ml_service
     ml_service.init_app(app)
     
+    # Initialize training service
+    from app.services.training_service import training_service
+    training_service.init_app(app, socketio)
+    
     # Register blueprints
     register_blueprints(app)
     
@@ -58,6 +62,7 @@ def register_blueprints(app):
     from app.routes.admin import admin_bp
     from app.routes.api import api_bp
     from app.routes.settings import settings_bp
+    from app.routes.training import training_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -67,6 +72,7 @@ def register_blueprints(app):
     app.register_blueprint(admin_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(settings_bp)
+    app.register_blueprint(training_bp)
 
 
 def register_error_handlers(app):

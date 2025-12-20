@@ -18,20 +18,51 @@
 ## 🚀 Features
 
 ### Core Capabilities
-- **🤖 Advanced ML Detection**: Multiple algorithms (Random Forest, XGBoost, SVM, Neural Networks)
+- **🤖 Advanced ML Detection**: Multiple algorithms (Random Forest, XGBoost, SVM, Neural Networks, Gradient Boosting)
+- **🎓 Real-time Model Training**: Live supervised learning with real-time progress tracking and metrics
+- **📊 Interactive Training Dashboard**: Train models with WebSocket-based live updates
+- **🔬 Dataset Analyzer**: Comprehensive dataset quality analysis with visualizations
+- **📈 Model Comparison**: Side-by-side performance metrics and visualization
 - **🔐 Enterprise Security**: JWT authentication, RBAC, session management, audit logging
-- **📊 Real-time Monitoring**: Live threat detection dashboard with WebSocket updates
-- **📈 Advanced Analytics**: Interactive visualizations with Chart.js and Plotly
+- **📡 Real-time Monitoring**: Live threat detection dashboard with WebSocket updates
+- **📊 Advanced Analytics**: Interactive visualizations with Chart.js
 - **🚨 Alert Management**: Multi-channel notifications (Email, Slack, in-app)
 - **👥 User Management**: Role-based access control (Admin, Analyst, Viewer)
-- **📁 Batch Processing**: CSV upload for bulk threat detection
-- **🎨 Modern UI**: Responsive Bootstrap 5 design with dark/light themes
+- **📁 Batch Processing**: CSV upload for bulk threat detection and training
+- **🎨 Modern UI**: Responsive Bootstrap 5 design with premium animations
+
+### ML/Training Features (NEW!)
+- **Real-time Training Progress**: Live updates on training status, accuracy, loss, and metrics
+- **Multiple Algorithms Support**: 
+  - Random Forest
+  - XGBoost
+  - Support Vector Machine (SVM)
+  - Neural Networks (MLP)
+  - Gradient Boosting
+- **Dataset Analysis Tools**: 
+  - Statistical analysis
+  - Class distribution visualization
+  - Missing values detection
+  - Data quality assessment
+  - Feature statistics
+- **Model Management**:
+  - Model versioning and tracking
+  - Performance metrics comparison
+  - Model activation/deactivation
+  - Model deletion
+- **Interactive Visualizations**:
+  - Real-time training progress bars
+  - Accuracy and metric charts
+  - Confusion matrices
+  - ROC curves
+  - Feature importance
 
 ### Technical Highlights
 - **Blueprint Architecture**: Modular, scalable Flask application structure
 - **SQLAlchemy ORM**: Robust database management with migrations
-- **Service Layer**: Clean separation of concerns with dedicated services
-- **RESTful API**: Complete API with Swagger documentation
+- **Service Layer**: Clean separation of concerns with dedicated ML and training services
+- **WebSocket Integration**: Real-time training updates via Socket.IO
+- **RESTful API**: Complete API with training endpoints
 - **Caching**: Redis integration for performance optimization
 - **Production Ready**: Docker support, health checks, comprehensive logging
 
@@ -214,30 +245,61 @@ python app.py
 
 ### Main Features
 
-#### 1. Live Threat Detection
+#### 1. Model Training (Admin Only) 🆕
+- Navigate to **Model Training** from the sidebar
+- Upload training dataset (CSV format)
+- Select ML algorithm:
+  - Random Forest
+  - XGBoost  
+  - Support Vector Machine
+  - Neural Networks
+  - Gradient Boosting
+- Configure training parameters
+- Monitor real-time training progress
+- View live metrics during training (accuracy, precision, recall, F1 score)
+- Compare multiple trained models
+- Activate best-performing model for predictions
+
+#### 2. Dataset Analyzer 🆕
+- Upload dataset for quality analysis
+- View comprehensive statistics
+- Check class distribution
+- Identify missing values
+- Analyze feature distributions
+- Get data quality recommendations
+- Validate dataset before training
+
+#### 3. Model Comparison 🆕
+- Select multiple models to compare
+- View side-by-side metrics comparison
+- Interactive charts (bar charts, radar charts)
+- Identify best performing model by metric
+- Make informed model selection decisions
+
+#### 4. Live Threat Detection
 - Navigate to **Live Detection** from the sidebar
 - Enter UAV communication parameters
 - Click **Detect Threat** to analyze
 - View prediction results with confidence scores
 
-#### 2. Detection History
+#### 5. Detection History
 - View all past detections
 - Filter by prediction type or threat level
 - Paginated results with search functionality
 
-#### 3. Analytics Dashboard
+#### 6. Analytics Dashboard
 - Real-time metrics cards
 - Interactive charts and visualizations
 - Detection trends over time
 - Model performance metrics
 
-#### 4. Alert Management
+#### 7. Alert Management
 - View active security alerts
 - Acknowledge and resolve alerts
 - Filter by status and severity
 - Assignment workflow for team collaboration
 
-#### 5. Admin Panel (Admin Only)
+#### 8. Admin Panel (Admin Only)
 - User management (create, activate, deactivate users)
 - System settings
 - Audit log viewer
@@ -264,15 +326,22 @@ uav_security_ml/
 │   │   ├── analytics.py
 │   │   ├── alerts.py
 │   │   ├── admin.py
+│   │   ├── training.py         # 🆕 Model training routes
 │   │   └── api.py
 │   ├── services/                # Business logic
-│   │   └── ml_service.py
+│   │   ├── ml_service.py
+│   │   └── training_service.py  # 🆕 Training service
 │   ├── utils/                   # Utility functions
 │   │   ├── decorators.py
 │   │   └── helpers.py
 │   ├── static/                  # CSS, JS, images
 │   └── templates/               # Jinja2 templates
+│       └── training/            # 🆕 Training templates
+│           ├── dashboard.html
+│           ├── compare.html
+│           └── dataset_analyzer.html
 ├── ml_models/                   # ML models storage
+│   └── saved_models/            # 🆕 Trained models
 ├── config.py                    # Configuration classes
 ├── run.py                       # Development entry point
 ├── wsgi.py                      # Production entry point
@@ -456,7 +525,7 @@ socketio.run(app, debug=True, host='0.0.0.0', port=5001)
 
 ---
 
-## 📊 Dataset Generation
+## 📊 Dataset Generation & Model Training
 
 This project uses a **synthetic dataset** that simulates realistic UAV network traffic patterns.
 
@@ -488,6 +557,151 @@ python generate_data.py
 - Packet Rate: 800-1000 packets/sec (DDoS)
 - Duration: 1-5 seconds (hit-and-run)
 - Failed Logins: 5-15 (brute force)
+
+---
+
+## 🎓 Model Training Guide 🆕
+
+### Quick Training (Command Line)
+
+Train a model using the command-line script:
+
+```bash
+# Train Random Forest model with 80-20 split
+python train_model.py
+```
+
+**Expected Output:**
+- Training samples: 10,400
+- Test samples: 2,600
+- Model Accuracy: ~95%
+- Saved to: `model/uav_security_model.pkl`
+
+### Interactive Training (Web Interface)
+
+For a premium training experience with real-time monitoring:
+
+1. **Access Training Dashboard**
+   - Login as admin (username: `admin`, password: `admin123`)
+   - Navigate to **Model Training** from sidebar
+   - Or visit: `http://localhost:5000/training/dashboard`
+
+2. **Upload Dataset**
+   - Click or drag-and-drop your CSV file
+   - System validates and shows dataset statistics
+   - View total samples, class distribution, features
+
+3. **Select Algorithm**
+   - Choose from 5 available algorithms:
+     - **Random Forest**: Best overall performance, robust
+     - **XGBoost**: Fast, efficient, high accuracy
+     - **SVM**: Good for small datasets
+     - **Neural Network**: Deep learning approach
+     - **Gradient Boosting**: Ensemble method
+
+4. **Configure Parameters**
+   - Set test split percentage (10-40%)
+   - Adjust random seed for reproducibility
+
+5. **Start Training**
+   - Click "Start Training"
+   - Watch real-time progress updates
+   - Monitor live metrics:
+     - Training stage (loading, preprocessing, training, evaluating)
+     - Progress percentage
+     - Training logs
+
+6. **View Results**
+   - Training completes automatically
+   - See final metrics:
+     - Accuracy
+     - Precision
+     - Recall
+     - F1 Score
+   - Model saved automatically
+   - Confusion matrix displayed
+
+### Dataset Analysis
+
+Before training, analyze your dataset:
+
+1. **Navigate to Dataset Analyzer**
+   - From training dashboard, click "Analyze Dataset"
+   - Or visit: `http://localhost:5000/training/dataset-analyzer`
+
+2. **Upload Dataset**
+   - Drag and drop CSV file
+   - Instant analysis begins
+
+3. **Review Analysis**
+   - **Overview Stats**: Total samples, features, class distribution
+   - **Quality Assessment**: Data quality score, missing values
+   - **Feature Statistics**: Mean, std dev, min, max, percentiles
+   - **Visualizations**: 
+     - Class distribution pie chart
+     - Missing values bar chart
+   - **Recommendations**: Actionable insights for data improvement
+
+### Model Comparison
+
+Compare performance of multiple models:
+
+1. **Navigate to Model Comparison**
+   - From training dashboard, click "Compare Models"
+   - Or visit: `http://localhost:5000/training/compare`
+
+2. **Select Models**
+   - Click on 2 or more trained models
+   - Selected models highlighted
+
+3. **Compare**
+   - Click "Compare Selected Models"
+   - View side-by-side metrics table
+   - Interactive charts:
+     - Accuracy comparison (bar chart)
+     - All metrics comparison (radar chart)
+   - Best model recommendations by metric
+
+4. **Activate Best Model**
+   - Choose the best performing model
+   - Click "Activate" to use for predictions
+   - Deactivates other models automatically
+
+### Training API Endpoints 🆕
+
+For programmatic access:
+
+```bash
+# Upload dataset
+POST /training/upload-dataset
+Content-Type: multipart/form-data
+Body: dataset=<file>
+
+# Start training
+POST /training/start-training
+Content-Type: application/json
+Body: {
+  "algorithm": "RandomForest",
+  "dataset_path": "/path/to/dataset.csv",
+  "test_size": 0.2
+}
+
+# List models
+GET /training/models
+
+# Activate model
+POST /training/models/<id>/activate
+
+# Delete model
+DELETE /training/models/<id>
+
+# Compare models
+POST /training/compare-models
+Content-Type: application/json
+Body: {
+  "model_ids": [1, 2, 3]
+}
+```
 
 ### Train Model
 

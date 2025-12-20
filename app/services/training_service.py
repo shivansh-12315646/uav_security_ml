@@ -224,8 +224,11 @@ class TrainingService:
             })
             
             # Create models directory if needed
+            if not self._app:
+                raise RuntimeError("Training service not properly initialized with app context")
+            
             models_dir = os.path.join(
-                os.path.dirname(self._app.root_path) if self._app else os.getcwd(),
+                os.path.dirname(self._app.root_path),
                 'ml_models', 'saved_models'
             )
             os.makedirs(models_dir, exist_ok=True)

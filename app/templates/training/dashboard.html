@@ -569,8 +569,63 @@
             duration: 5000
         }).showToast();
         
-        // Reload page after 3 seconds to show new model
-        setTimeout(() => location.reload(), 3000);
+        // Refresh models table without full page reload
+        setTimeout(() => {
+            fetch('/training/models')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateModelsTable(data.models);
+                    } else {
+                        location.reload(); // Fallback to full reload
+                    }
+                })
+                .catch(() => location.reload());
+        }, 2000);
+    }
+    
+    function updateModelsTable(models) {
+        const tbody = document.getElementById('modelsTableBody');
+        if (!tbody) {
+            location.reload();
+            return;
+        }
+        
+        let html = '';
+        if (models.length > 0) {
+            models.forEach(model => {
+                html += `
+                    <tr>
+                        <td><strong>${model.name}</strong> v${model.version}</td>
+                        <td>${model.accuracy ? (model.accuracy * 100).toFixed(2) + '%' : 'N/A'}</td>
+                        <td>${model.precision ? (model.precision * 100).toFixed(2) + '%' : 'N/A'}</td>
+                        <td>${model.recall ? (model.recall * 100).toFixed(2) + '%' : 'N/A'}</td>
+                        <td>${model.f1_score ? model.f1_score.toFixed(4) : 'N/A'}</td>
+                        <td>${new Date(model.created_at).toLocaleString()}</td>
+                        <td>
+                            ${model.is_active ? 
+                                '<span class="badge bg-success">Active</span>' : 
+                                '<span class="badge bg-secondary">Inactive</span>'
+                            }
+                        </td>
+                        <td>
+                            ${!model.is_active ? 
+                                `<button class="btn btn-sm btn-success" onclick="activateModel(${model.id})">
+                                    <i class="fas fa-check"></i> Activate
+                                </button>` : ''
+                            }
+                            <button class="btn btn-sm btn-danger" onclick="deleteModel(${model.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        } else {
+            html = `<tr><td colspan="8" class="text-center text-muted">No trained models yet. Start training your first model!</td></tr>`;
+        }
+        
+        tbody.innerHTML = html;
     }
     
     function showError(error) {

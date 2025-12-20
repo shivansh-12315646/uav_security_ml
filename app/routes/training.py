@@ -67,8 +67,9 @@ def upload_dataset():
         
         # Save file
         filename = secure_filename(file.filename)
+        from flask import current_app
         upload_dir = os.path.join(
-            os.path.dirname(current_user._app.root_path if hasattr(current_user, '_app') else __file__),
+            os.path.dirname(current_app.root_path),
             'uploads'
         )
         os.makedirs(upload_dir, exist_ok=True)
@@ -128,7 +129,9 @@ def start_training():
         
         # Start training in background thread
         def train_async():
-            with training_bp.app.app_context():
+            from flask import current_app
+            app = current_app._get_current_object()
+            with app.app_context():
                 result = training_service.train_model(
                     algorithm=algorithm,
                     dataset_path=dataset_path,
@@ -165,9 +168,6 @@ def start_training():
                     )
                     db.session.add(audit)
                     db.session.commit()
-        
-        # Store app context for thread
-        training_bp.app = request._get_current_object().app._get_current_object()
         
         thread = threading.Thread(target=train_async)
         thread.daemon = True

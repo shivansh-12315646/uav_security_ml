@@ -182,9 +182,16 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" 
+        integrity="sha256-6L0EgPqXb8LKH2i2k8vIkBYbvn0xdhLB3kHlU6F/G1I=" 
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastify-js" 
+        integrity="sha256-3jCw4xRR6xk8PoYrFzd7yBJdHUAa+sLrKg7lq1T0w8Y=" 
+        crossorigin="anonymous"></script>
+<link rel="stylesheet" type="text/css" 
+      href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"
+      integrity="sha256-3jCw4xRR6xk8PoYrFzd7yBJdHUAa+sLrKg7lq1T0w8Y=" 
+      crossorigin="anonymous">
 
 <script>
     let selectedModels = new Set();

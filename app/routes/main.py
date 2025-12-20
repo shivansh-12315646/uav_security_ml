@@ -53,7 +53,7 @@ def dashboard_overview():
             Alert.status.in_(['Open', 'Acknowledged'])
         ).count()
         
-        critical_alerts = Alert.query.join(DetectionHistory).filter(
+        critical_alerts = Alert.query.join(DetectionHistory, Alert.detection_id == DetectionHistory.id).filter(
             Alert.status.in_(['Open', 'Acknowledged']),
             DetectionHistory.threat_level == 'Critical'
         ).count()

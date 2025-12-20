@@ -39,7 +39,10 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;"
+    # CSP: More restrictive for production security
+    # Note: 'unsafe-inline' for styles is needed for the inline CSS in the generated HTML
+    # For production apps with external stylesheets, remove 'unsafe-inline'
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self';"
 
 # Environment variables (set these in Netlify UI for security)
 # [context.production.environment]

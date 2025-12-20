@@ -443,20 +443,40 @@ def create_404_page(build_dir):
 
 def main():
     """Main build process."""
-    print("🏗️  Building static site for Netlify...")
-    print()
+    try:
+        print("🏗️  Building static site for Netlify...")
+        print()
+        
+        build_dir = create_build_directory()
+        copy_static_assets(build_dir)
+        create_landing_page(build_dir)
+        create_404_page(build_dir)
+        
+        print()
+        print("✅ Build complete! Static site ready in 'build/' directory")
+        print("📁 Files:")
+        for file in build_dir.rglob('*'):
+            if file.is_file():
+                print(f"   - {file.relative_to(build_dir)}")
+        
+        return 0
     
-    build_dir = create_build_directory()
-    copy_static_assets(build_dir)
-    create_landing_page(build_dir)
-    create_404_page(build_dir)
+    except PermissionError as e:
+        print(f"❌ Permission error: {e}")
+        print("   Make sure you have write permissions to the current directory.")
+        return 1
     
-    print()
-    print("✅ Build complete! Static site ready in 'build/' directory")
-    print("📁 Files:")
-    for file in build_dir.rglob('*'):
-        if file.is_file():
-            print(f"   - {file.relative_to(build_dir)}")
+    except OSError as e:
+        print(f"❌ File system error: {e}")
+        print("   Check disk space and file permissions.")
+        return 1
+    
+    except Exception as e:
+        print(f"❌ Unexpected error during build: {e}")
+        print("   Please check the error message and try again.")
+        import traceback
+        traceback.print_exc()
+        return 1
 
 if __name__ == '__main__':
-    main()
+    exit(main())

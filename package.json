@@ -1,0 +1,31 @@
+{
+  "name": "uav-security-ml",
+  "version": "2.0.0",
+  "description": "UAV Security with Machine Learning - Advanced threat detection system",
+  "scripts": {
+    "build": "python build_static.py",
+    "dev": "python run.py",
+    "deploy": "netlify deploy --prod"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shivansh-12315646/uav_security_ml.git"
+  },
+  "keywords": [
+    "uav",
+    "security",
+    "machine-learning",
+    "threat-detection",
+    "flask",
+    "python"
+  ],
+  "author": "UAV Security ML Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/shivansh-12315646/uav_security_ml/issues"
+  },
+  "homepage": "https://github.com/shivansh-12315646/uav_security_ml#readme",
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  }
+}

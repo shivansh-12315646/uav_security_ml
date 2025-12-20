@@ -1,72 +1,302 @@
 {% extends "base.html" %}
 
 {% block title %}Alerts - UAV Security ML{% endblock %}
-{% block page_title %}Security Alerts{% endblock %}
+{% block page_title %}Security Alerts Management{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5><i class="fas fa-exclamation-triangle"></i> All Alerts</h5>
-        <div>
-            <form method="GET" class="d-inline">
-                <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="All" {% if status_filter == 'All' %}selected{% endif %}>All Status</option>
-                    <option value="Open" {% if status_filter == 'Open' or not status_filter %}selected{% endif %}>Open</option>
-                    <option value="Acknowledged" {% if status_filter == 'Acknowledged' %}selected{% endif %}>Acknowledged</option>
-                    <option value="Resolved" {% if status_filter == 'Resolved' %}selected{% endif %}>Resolved</option>
-                    <option value="False Positive" {% if status_filter == 'False Positive' %}selected{% endif %}>False Positive</option>
-                </select>
-            </form>
-        </div>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Severity</th>
-                        <th>Status</th>
-                        <th>Created</th>
-                        <th>Detection</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for alert in alerts %}
-                    <tr>
-                        <td>#{{ alert.id }}</td>
-                        <td>
-                            <span class="badge bg-{{ 'danger' if alert.severity == 'Critical' else ('warning' if alert.severity == 'High' else 'info') }}">
-                                {{ alert.severity }}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="badge bg-{{ 'success' if alert.status == 'Resolved' else ('info' if alert.status == 'Acknowledged' else 'warning') }}">
-                                {{ alert.status }}
-                            </span>
-                        </td>
-                        <td>{{ alert.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                        <td><a href="#">#{{ alert.detection_id }}</a></td>
-                        <td>
-                            {% if alert.status == 'Open' %}
-                            <form method="POST" action="{{ url_for('alerts.acknowledge_alert', alert_id=alert.id) }}" class="d-inline">
-                                {{ csrf_token() }}
-                                <button type="submit" class="btn btn-sm btn-warning">Acknowledge</button>
-                            </form>
-                            {% endif %}
-                            {% if alert.status in ['Open', 'Acknowledged'] %}
-                            <form method="POST" action="{{ url_for('alerts.resolve_alert', alert_id=alert.id) }}" class="d-inline">
-                                {{ csrf_token() }}
-                                <button type="submit" class="btn btn-sm btn-success">Resolve</button>
-                            </form>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<!-- Alerts Header with Filters -->
+<div class="row mb-4" data-aos="fade-down">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Alert Center</h4>
+                        <p class="text-muted mb-0">Monitor and manage security alerts</p>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    <input type="text" class="form-control" placeholder="Search alerts..." id="searchInput">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <form method="GET" class="d-inline">
+                                    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                                        <option value="All" {% if status_filter == 'All' %}selected{% endif %}>All Status</option>
+                                        <option value="Open" {% if status_filter == 'Open' or not status_filter %}selected{% endif %}>Open</option>
+                                        <option value="Acknowledged" {% if status_filter == 'Acknowledged' %}selected{% endif %}>Acknowledged</option>
+                                        <option value="Resolved" {% if status_filter == 'Resolved' %}selected{% endif %}>Resolved</option>
+                                        <option value="False Positive" {% if status_filter == 'False Positive' %}selected{% endif %}>False Positive</option>
+                                    </select>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- Alert Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="0">
+        <div class="card metric-card danger">
+            <div class="card-body text-center">
+                <i class="fas fa-exclamation-circle fa-2x mb-2 text-danger"></i>
+                <h3 class="mb-1">{{ alerts|selectattr('status', 'equalto', 'Open')|list|length }}</h3>
+                <p class="text-muted mb-0">Open Alerts</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
+        <div class="card metric-card warning">
+            <div class="card-body text-center">
+                <i class="fas fa-hand-paper fa-2x mb-2 text-warning"></i>
+                <h3 class="mb-1">{{ alerts|selectattr('status', 'equalto', 'Acknowledged')|list|length }}</h3>
+                <p class="text-muted mb-0">Acknowledged</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
+        <div class="card metric-card safe">
+            <div class="card-body text-center">
+                <i class="fas fa-check-circle fa-2x mb-2 text-success"></i>
+                <h3 class="mb-1">{{ alerts|selectattr('status', 'equalto', 'Resolved')|list|length }}</h3>
+                <p class="text-muted mb-0">Resolved</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
+        <div class="card metric-card info">
+            <div class="card-body text-center">
+                <i class="fas fa-list fa-2x mb-2 text-primary"></i>
+                <h3 class="mb-1">{{ alerts|length }}</h3>
+                <p class="text-muted mb-0">Total Alerts</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alerts Table -->
+<div class="row">
+    <div class="col-md-12" data-aos="fade-up">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-table"></i> Alerts List</h5>
+                <div>
+                    <button class="btn btn-sm btn-outline-primary me-2" onclick="toggleView('table')" id="tableViewBtn">
+                        <i class="fas fa-table"></i> Table View
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="toggleView('kanban')" id="kanbanViewBtn">
+                        <i class="fas fa-columns"></i> Kanban View
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Table View -->
+                <div id="tableView" class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th width="80">ID</th>
+                                <th>Severity</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Detection</th>
+                                <th width="250">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alert in alerts %}
+                            <tr data-alert-id="{{ alert.id }}">
+                                <td><strong>#{{ alert.id }}</strong></td>
+                                <td>
+                                    {% set severity = alert.severity %}
+                                    {% include 'components/alert_badge.html' %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if alert.status == 'Resolved' else ('info' if alert.status == 'Acknowledged' else 'warning') }}">
+                                        <i class="fas fa-{{ 'check' if alert.status == 'Resolved' else ('hand-paper' if alert.status == 'Acknowledged' else 'clock') }}"></i>
+                                        {{ alert.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <small>{{ alert.created_at.strftime('%H:%M:%S') }}</small><br>
+                                    <small class="text-muted">{{ alert.created_at.strftime('%Y-%m-%d') }}</small>
+                                </td>
+                                <td><a href="#" class="text-decoration-none">#{{ alert.detection_id }}</a></td>
+                                <td>
+                                    {% if alert.status == 'Open' %}
+                                    <form method="POST" action="{{ url_for('alerts.acknowledge_alert', alert_id=alert.id) }}" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button type="submit" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-hand-paper"></i> Acknowledge
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    {% if alert.status in ['Open', 'Acknowledged'] %}
+                                    <form method="POST" action="{{ url_for('alerts.resolve_alert', alert_id=alert.id) }}" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="fas fa-check"></i> Resolve
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    <button class="btn btn-sm btn-outline-primary" onclick="viewAlertDetails({{ alert.id }})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-3x mb-3 opacity-50"></i>
+                                    <p class="mb-0">No alerts found</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Kanban View (Hidden by default) -->
+                <div id="kanbanView" style="display: none;">
+                    <div class="row">
+                        <!-- Open Column -->
+                        <div class="col-md-4">
+                            <div class="card bg-dark bg-opacity-25">
+                                <div class="card-header bg-warning bg-opacity-25">
+                                    <h6 class="mb-0"><i class="fas fa-clock"></i> Open <span class="badge bg-warning">{{ alerts|selectattr('status', 'equalto', 'Open')|list|length }}</span></h6>
+                                </div>
+                                <div class="card-body" style="min-height: 400px; max-height: 600px; overflow-y: auto;">
+                                    {% for alert in alerts %}
+                                    {% if alert.status == 'Open' %}
+                                    <div class="card mb-2" data-aos="fade-up">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <span class="badge bg-danger">#{{ alert.id }}</span>
+                                                {% set severity = alert.severity %}
+                                                {% include 'components/alert_badge.html' %}
+                                            </div>
+                                            <p class="mb-2 small">Detection #{{ alert.detection_id }}</p>
+                                            <small class="text-muted">{{ alert.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Acknowledged Column -->
+                        <div class="col-md-4">
+                            <div class="card bg-dark bg-opacity-25">
+                                <div class="card-header bg-info bg-opacity-25">
+                                    <h6 class="mb-0"><i class="fas fa-hand-paper"></i> Acknowledged <span class="badge bg-info">{{ alerts|selectattr('status', 'equalto', 'Acknowledged')|list|length }}</span></h6>
+                                </div>
+                                <div class="card-body" style="min-height: 400px; max-height: 600px; overflow-y: auto;">
+                                    {% for alert in alerts %}
+                                    {% if alert.status == 'Acknowledged' %}
+                                    <div class="card mb-2" data-aos="fade-up">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <span class="badge bg-info">#{{ alert.id }}</span>
+                                                {% set severity = alert.severity %}
+                                                {% include 'components/alert_badge.html' %}
+                                            </div>
+                                            <p class="mb-2 small">Detection #{{ alert.detection_id }}</p>
+                                            <small class="text-muted">{{ alert.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Resolved Column -->
+                        <div class="col-md-4">
+                            <div class="card bg-dark bg-opacity-25">
+                                <div class="card-header bg-success bg-opacity-25">
+                                    <h6 class="mb-0"><i class="fas fa-check-circle"></i> Resolved <span class="badge bg-success">{{ alerts|selectattr('status', 'equalto', 'Resolved')|list|length }}</span></h6>
+                                </div>
+                                <div class="card-body" style="min-height: 400px; max-height: 600px; overflow-y: auto;">
+                                    {% for alert in alerts %}
+                                    {% if alert.status == 'Resolved' %}
+                                    <div class="card mb-2" data-aos="fade-up">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <span class="badge bg-success">#{{ alert.id }}</span>
+                                                {% set severity = alert.severity %}
+                                                {% include 'components/alert_badge.html' %}
+                                            </div>
+                                            <p class="mb-2 small">Detection #{{ alert.detection_id }}</p>
+                                            <small class="text-muted">{{ alert.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Toggle between table and kanban view
+function toggleView(view) {
+    const tableView = document.getElementById('tableView');
+    const kanbanView = document.getElementById('kanbanView');
+    const tableBtn = document.getElementById('tableViewBtn');
+    const kanbanBtn = document.getElementById('kanbanViewBtn');
+    
+    if (view === 'table') {
+        tableView.style.display = 'block';
+        kanbanView.style.display = 'none';
+        tableBtn.classList.add('active');
+        kanbanBtn.classList.remove('active');
+    } else {
+        tableView.style.display = 'none';
+        kanbanView.style.display = 'block';
+        tableBtn.classList.remove('active');
+        kanbanBtn.classList.add('active');
+    }
+}
+
+// Search functionality
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('#tableView tbody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+
+// View alert details
+function viewAlertDetails(alertId) {
+    if (window.dashboardUtils) {
+        window.dashboardUtils.showToast('Viewing alert #' + alertId, 'info');
+    }
+    // TODO: Open modal with alert details
+}
+
+// Initialize table view as active
+document.getElementById('tableViewBtn').classList.add('active');
+</script>
 {% endblock %}

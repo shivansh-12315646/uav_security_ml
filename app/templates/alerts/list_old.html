@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Alerts - UAV Security ML{% endblock %}
+{% block page_title %}Security Alerts{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5><i class="fas fa-exclamation-triangle"></i> All Alerts</h5>
+        <div>
+            <form method="GET" class="d-inline">
+                <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="All" {% if status_filter == 'All' %}selected{% endif %}>All Status</option>
+                    <option value="Open" {% if status_filter == 'Open' or not status_filter %}selected{% endif %}>Open</option>
+                    <option value="Acknowledged" {% if status_filter == 'Acknowledged' %}selected{% endif %}>Acknowledged</option>
+                    <option value="Resolved" {% if status_filter == 'Resolved' %}selected{% endif %}>Resolved</option>
+                    <option value="False Positive" {% if status_filter == 'False Positive' %}selected{% endif %}>False Positive</option>
+                </select>
+            </form>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Severity</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Detection</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for alert in alerts %}
+                    <tr>
+                        <td>#{{ alert.id }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'danger' if alert.severity == 'Critical' else ('warning' if alert.severity == 'High' else 'info') }}">
+                                {{ alert.severity }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if alert.status == 'Resolved' else ('info' if alert.status == 'Acknowledged' else 'warning') }}">
+                                {{ alert.status }}
+                            </span>
+                        </td>
+                        <td>{{ alert.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td><a href="#">#{{ alert.detection_id }}</a></td>
+                        <td>
+                            {% if alert.status == 'Open' %}
+                            <form method="POST" action="{{ url_for('alerts.acknowledge_alert', alert_id=alert.id) }}" class="d-inline">
+                                {{ csrf_token() }}
+                                <button type="submit" class="btn btn-sm btn-warning">Acknowledge</button>
+                            </form>
+                            {% endif %}
+                            {% if alert.status in ['Open', 'Acknowledged'] %}
+                            <form method="POST" action="{{ url_for('alerts.resolve_alert', alert_id=alert.id) }}" class="d-inline">
+                                {{ csrf_token() }}
+                                <button type="submit" class="btn btn-sm btn-success">Resolve</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

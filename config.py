@@ -57,7 +57,7 @@ class Config:
     ALLOWED_EXTENSIONS = {'csv', 'xlsx', 'xls'}
     
     # ML Models
-    ML_MODELS_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ml_models', 'saved_models')
+    ML_MODELS_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ml_models')
     DEFAULT_MODEL = os.getenv('DEFAULT_MODEL', 'RandomForest')
     MODEL_CONFIDENCE_THRESHOLD = float(os.getenv('MODEL_CONFIDENCE_THRESHOLD', 0.7))
     

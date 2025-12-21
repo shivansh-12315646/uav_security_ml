@@ -68,6 +68,9 @@
                 {% endif %}
             </a>
             {% if current_user.is_admin() %}
+            <a href="{{ url_for('training.dashboard') }}" class="nav-link">
+                <i class="fas fa-brain"></i> Model Training
+            </a>
             <a href="{{ url_for('admin.dashboard') }}" class="nav-link">
                 <i class="fas fa-cog"></i> Admin
             </a>

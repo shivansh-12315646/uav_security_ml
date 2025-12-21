@@ -12,7 +12,7 @@
         <p>Upload a CSV file with multiple UAV data points for batch threat detection.</p>
         
         <form method="POST" enctype="multipart/form-data">
-            {{ csrf_token() }}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="mb-3">
                 <label for="file" class="form-label">CSV File</label>
                 <input type="file" class="form-control" id="file" name="file" accept=".csv" required>

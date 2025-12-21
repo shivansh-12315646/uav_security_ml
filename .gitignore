@@ -73,6 +73,9 @@ ml_models/saved_models/*.joblib
 uav_data.csv
 model/uav_security_model.pkl
 scaler.pkl
+data/*.csv
+ml_models/*.pkl
+ml_models/*.joblib
 
 # Testing
 .pytest_cache/

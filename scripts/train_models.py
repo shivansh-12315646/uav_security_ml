@@ -5,8 +5,8 @@ Professional Multi-Algorithm ML Training Pipeline
 Trains multiple ML algorithms on UAV security dataset:
 - Random Forest Classifier
 - Support Vector Machine (SVM)
-- Neural Network (TensorFlow)
-- Gradient Boosting (XGBoost)
+- Gradient Boosting Classifier (scikit-learn)
+- XGBoost (Extreme Gradient Boosting)
 
 Features:
 - Real supervised learning with proper train/test split
@@ -48,14 +48,6 @@ try:
 except ImportError:
     HAS_XGBOOST = False
     print("⚠️  XGBoost not installed. Install with: pip install xgboost")
-
-try:
-    import tensorflow as tf
-    from tensorflow import keras
-    from tensorflow.keras import layers
-    HAS_TENSORFLOW = False  # Set to False to avoid TensorFlow for now (heavy dependency)
-except ImportError:
-    HAS_TENSORFLOW = False
 
 
 # Configuration

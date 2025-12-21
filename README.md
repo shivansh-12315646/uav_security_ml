@@ -50,7 +50,8 @@ A production-ready, enterprise-grade machine learning platform for detecting and
 
 ### 🚀 **Production Ready**
 - **Docker Support**: Multi-container deployment with PostgreSQL and Redis
-- **Heroku/Railway Compatible**: One-click deployment
+- **Multiple Cloud Platforms**: Netlify (static), Heroku, Railway, Render support
+- **One-Click Deploy**: Ready-to-use deployment configurations
 - **Security Headers**: CSRF protection, rate limiting, secure sessions
 - **API Documentation**: Swagger/OpenAPI specs
 - **Monitoring**: psutil system metrics
@@ -79,7 +80,11 @@ uav_security_ml/
 ├── requirements.txt     # Python dependencies
 ├── Dockerfile           # Multi-stage Docker build
 ├── docker-compose.yml   # PostgreSQL + Redis + Flask + Celery
-└── Procfile            # Heroku deployment
+├── Procfile            # Heroku deployment
+├── railway.json        # Railway deployment
+├── render.yaml         # Render deployment
+├── netlify.toml        # Netlify deployment
+└── build_static.py     # Netlify static site builder
 ```
 
 ---
@@ -197,7 +202,42 @@ This starts:
 
 ## ☁️ Cloud Deployment
 
-### Heroku
+### Netlify (Static Landing Page)
+
+**One-Click Deploy:**
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/shivansh-12315646/uav_security_ml)
+
+**What Gets Deployed:**
+- Static landing page with project showcase
+- Serverless functions (health check, info endpoints)
+- Documentation and features overview
+- Fast global CDN delivery
+
+**Manual Deploy:**
+```bash
+# Install Netlify CLI
+npm install -g netlify-cli
+
+# Login to Netlify
+netlify login
+
+# Deploy to production
+netlify deploy --prod
+```
+
+**Configuration:**
+- Build command: `python build_static.py`
+- Publish directory: `build/`
+- Functions: `netlify/functions/`
+
+**Note:** Netlify hosts the static landing page. For full backend functionality (database, ML training, real-time detection), deploy the Flask application to Render, Railway, or Heroku.
+
+**See:** [NETLIFY_DEPLOY.md](NETLIFY_DEPLOY.md) for detailed instructions
+
+---
+
+### Heroku (Full Application)
 
 ```bash
 # Login to Heroku
@@ -221,7 +261,7 @@ git push heroku main
 heroku run python -c "from app import create_app, db; app=create_app(); app.app_context().push(); db.create_all()"
 ```
 
-### Railway
+### Railway (Full Application)
 
 ```bash
 # Install Railway CLI
@@ -237,12 +277,22 @@ railway init
 railway up
 ```
 
-### Render
+**Configuration files:**
+- `railway.json` - Main Railway configuration
+- `railway.toml` - Alternative TOML format
+
+### Render (Full Application - Recommended)
 
 1. Create a new Web Service
 2. Connect your GitHub repository
 3. Use `render.yaml` for auto-configuration
 4. Deploy!
+
+**Features:**
+- Automatic PostgreSQL database
+- Zero-downtime deploys
+- Free SSL certificates
+- Easy environment variable management
 
 ---
 

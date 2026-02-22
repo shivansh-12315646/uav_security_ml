@@ -69,7 +69,7 @@
                 {% if active_model %}
                 <div class="text-center mb-3">
                     <div class="circular-progress" style="--progress: {{ active_model.accuracy|floatformat:0 }}%">
-                        <div class="circular-progress-text">{{ active_model.accuracy * 100|floatformat:0 if active_model.accuracy else 'N/A' }}%</div>
+                        <div class="circular-progress-text">{% if active_model.accuracy %}{% widthratio active_model.accuracy 1 100 %}{% else %}N/A{% endif %}%</div>
                     </div>
                     <p class="mt-2 mb-0"><strong>Accuracy</strong></p>
                 </div>
@@ -84,7 +84,7 @@
                     </tr>
                     <tr>
                         <th>F1 Score:</th>
-                        <td>{{ active_model.f1_score|floatformat:2 if active_model.f1_score else 'N/A' }}</td>
+                        <td>{% if active_model.f1_score %}{{ active_model.f1_score|floatformat:2 }}{% else %}N/A{% endif %}</td>
                     </tr>
                 </table>
                 {% else %}

@@ -77,7 +77,7 @@
         <div class="card metric-card warning">
             <div class="card-body text-center">
                 <i class="fas fa-percentage fa-2x mb-2 text-warning"></i>
-                <h3 class="mb-1">{{ (detections|selectattr('prediction', 'equalto', 'Threat'|floatformat:1|list|length / detections|length * 100) if detections else 0) }}%</h3>
+                <h3 class="mb-1">0%</h3>
                 <p class="text-muted mb-0">Threat Rate</p>
             </div>
         </div>
@@ -163,7 +163,7 @@
                                     {% include "components/alert_badge.html" with severity=detection.threat_level %}
                                 </td>
                                 <td><small>{{ detection.model_version or 'N/A' }}</small></td>
-                                <td><small>{{ detection.user.username if detection.user else 'System' }}</small></td>
+                                <td><small>{% if detection.user %}{{ detection.user.username }}{% else %}System{% endif %}</small></td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary" onclick="viewDetectionDetails({{ detection.id }})">
                                         <i class="fas fa-eye"></i>
@@ -187,7 +187,7 @@
                 <nav class="mt-3">
                     <ul class="pagination justify-content-center">
                         <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                            <a class="page-link" href="{% url 'detection_history' pagination.prev_num %} if pagination.has_prev else '#' }}">Previous</a>
+                            <a class="page-link" href="{% if pagination.has_prev %}{% url 'detection_history' %}?page={{ pagination.previous_page_number }}{% else %}#{% endif %}">Previous</a>
                         </li>
                         
                         {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
@@ -201,7 +201,7 @@
                         {% endfor %}
                         
                         <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                            <a class="page-link" href="{% url 'detection_history' pagination.next_num %} if pagination.has_next else '#' }}">Next</a>
+                            <a class="page-link" href="{% if pagination.has_next %}{% url 'detection_history' %}?page={{ pagination.next_page_number }}{% else %}#{% endif %}">Next</a>
                         </li>
                     </ul>
                 </nav>
@@ -222,8 +222,8 @@
                 <div class="timeline">
                     {% for detection in detections[:20] %}
                     <div class="timeline-item" data-aos="fade-left" data-aos-delay="{{ forloop.counter * 50 }}">
-                        <div class="timeline-marker bg-{{ 'danger' if detection.prediction == 'Threat' else 'success' }}">
-                            <i class="fas fa-{{ 'exclamation-triangle' if detection.prediction == 'Threat' else 'check-circle' }}"></i>
+                        <div class="timeline-marker {% if detection.prediction == 'Threat' %}bg-danger{% else %}bg-success{% endif %}">
+                            <i class="fas {% if detection.prediction == 'Threat' %}fa-exclamation-triangle{% else %}fa-check-circle{% endif %}"></i>
                         </div>
                         <div class="timeline-content">
                             <div class="card">

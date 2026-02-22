@@ -40,8 +40,8 @@
                         <td>
                             <form method="POST" action="{% url 'toggle_user_active' user.id %}" class="d-inline">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-{{ 'danger' if user.is_active else 'success' }}">
-                                    {{ 'Deactivate' if user.is_active else 'Activate' }}
+                                <button type="submit" class="btn btn-sm {% if user.is_active %}btn-danger{% else %}btn-success{% endif %}">
+                                    {% if user.is_active %}Deactivate{% else %}Activate{% endif %}
                                 </button>
                             </form>
                         </td>

@@ -120,8 +120,8 @@
                     <i class="fas fa-check-circle d-none" id="check-{{ model.id }}" style="color: #10b981; font-size: 1.5rem;"></i>
                 </div>
                 <div class="mt-3">
-                    <div class="text-muted small">Accuracy: {{ model.accuracy * 100|floatformat:2 if model.accuracy else 'N/A' }}%</div>
-                    <div class="text-muted small">F1 Score: {{ model.f1_score|floatformat:4 if model.f1_score else 'N/A' }}</div>
+                    <div class="text-muted small">Accuracy: {% if model.accuracy %}{% widthratio model.accuracy 1 100 %}{% else %}N/A{% endif %}%</div>
+                    <div class="text-muted small">F1 Score: {% if model.f1_score %}{{ model.f1_score|floatformat:4 }}{% else %}N/A{% endif %}</div>
                 </div>
             </div>
             {% endfor %}

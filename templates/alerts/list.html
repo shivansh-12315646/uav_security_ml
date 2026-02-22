@@ -119,8 +119,8 @@
                                     {% include "components/alert_badge.html" with severity=alert.severity %}
                                 </td>
                                 <td>
-                                    <span class="badge bg-{{ 'success' if alert.status == 'Resolved' else ('info' if alert.status == 'Acknowledged' else 'warning') }}">
-                                        <i class="fas fa-{{ 'check' if alert.status == 'Resolved' else ('hand-paper' if alert.status == 'Acknowledged' else 'clock') }}"></i>
+                                    <span class="badge {% if alert.status == 'Resolved' %}bg-success{% elif alert.status == 'Acknowledged' %}bg-info{% else %}bg-warning{% endif %}">
+                                        <i class="fas {% if alert.status == 'Resolved' %}fa-check{% elif alert.status == 'Acknowledged' %}fa-hand-paper{% else %}fa-clock{% endif %}"></i>
                                         {{ alert.status }}
                                     </span>
                                 </td>

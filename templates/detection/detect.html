@@ -17,8 +17,7 @@
     animation: pulse 2s infinite;
 }
 
-. threat-indicator-large. safe {
-    background:  linear-gradient(135deg, #10b981 0%, #059669 100%);
+.threat-indicator-large.safe {
     box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
 }
 
@@ -32,7 +31,7 @@
     50% { transform: scale(1.05); }
 }
 
-. confidence-meter {
+.confidence-meter {
     height: 30px;
     background: linear-gradient(90deg, #1e293b 0%, #334155 100%);
     border-radius: 15px;
@@ -51,7 +50,7 @@
     font-weight: bold;
 }
 
-.form-control: focus {
+.form-control:focus {
     border-color: #667eea;
     box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
 }
@@ -74,7 +73,7 @@
     color: #10b981;
 }
 
-.param-hint . attack-range {
+.param-hint .attack-range {
     color: #ef4444;
 }
 
@@ -344,20 +343,20 @@
     <div class="col-lg-6" data-aos="fade-left">
         {% if prediction %}
         <!-- Detection Result Card -->
-        <div class="card shadow-lg border-{{ 'success' if prediction.prediction == 'Normal' else 'danger' }} detection-card-animated" id="resultCard">
-            <div class="card-header bg-{{ 'success' if prediction.prediction == 'Normal' else 'danger' }} bg-gradient text-white">
+        <div class="card shadow-lg {% if prediction.prediction == 'Normal' %}border-success{% else %}border-danger{% endif %} detection-card-animated" id="resultCard">
+            <div class="card-header {% if prediction.prediction == 'Normal' %}bg-success{% else %}bg-danger{% endif %} bg-gradient text-white">
                 <h5 class="mb-0">
-                    <i class="fas fa-{{ 'shield-check' if prediction.prediction == 'Normal' else 'exclamation-triangle' }} me-2"></i> 
+                    <i class="fas {% if prediction.prediction == 'Normal' %}fa-shield-check{% else %}fa-exclamation-triangle{% endif %} me-2"></i> 
                     Analysis Complete
                 </h5>
             </div>
             <div class="card-body">
                 <!-- Threat Indicator -->
                 <div class="text-center mb-4">
-                    <div class="threat-indicator-large {{ 'safe' if prediction.prediction == 'Normal' else 'danger' }}">
-                        <i class="fas fa-{{ 'shield-alt' if prediction.prediction == 'Normal' else 'skull-crossbones' }} fa-4x text-white"></i>
+                    <div class="threat-indicator-large {% if prediction.prediction == 'Normal' %}safe{% else %}danger{% endif %}">
+                        <i class="fas {% if prediction.prediction == 'Normal' %}fa-shield-alt{% else %}fa-skull-crossbones{% endif %} fa-4x text-white"></i>
                     </div>
-                    <h2 class="mt-3 fw-bold text-{{ 'success' if prediction.prediction == 'Normal' else 'danger' }}">
+                    <h2 class="mt-3 fw-bold {% if prediction.prediction == 'Normal' %}text-success{% else %}text-danger{% endif %}">
                         {% if prediction.prediction == 'Normal' %}
                             SAFE - Normal Operation
                         {% else %}
@@ -365,7 +364,7 @@
                         {% endif %}
                     </h2>
                     <p class="text-muted">
-                        {{ 'All UAV parameters within normal ranges' if prediction.prediction == 'Normal' else 'Anomalous behavior detected in UAV telemetry' }}
+                        {% if prediction.prediction == 'Normal' %}All UAV parameters within normal ranges{% else %}Anomalous behavior detected in UAV telemetry{% endif %}
                     </p>
                 </div>
                 
@@ -373,12 +372,12 @@
                 <div class="mb-4">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <h6 class="mb-0"><i class="fas fa-percentage me-2"></i>Model Confidence</h6>
-                        <span class="badge bg-{{ 'success' if prediction. confidence > 0.9 else ('warning' if prediction.confidence > 0.7 else 'secondary') }} fs-6">
+                        <span class="badge {% if prediction.confidence > 0.9 %}bg-success{% elif prediction.confidence > 0.7 %}bg-warning{% else %}bg-secondary{% endif %} fs-6">
                             {% widthratio prediction.confidence 1 100 %}%
                         </span>
                     </div>
                     <div class="progress" style="height: 25px;">
-                        <div class="progress-bar bg-{{ 'success' if prediction.prediction == 'Normal' else 'danger' }} progress-bar-striped progress-bar-animated" 
+                        <div class="progress-bar {% if prediction.prediction == 'Normal' %}bg-success{% else %}bg-danger{% endif %} progress-bar-striped progress-bar-animated" 
                              role="progressbar" 
                              style="width: {% widthratio prediction.confidence 1 100 %}%"
                              aria-valuenow="{% widthratio prediction.confidence 1 100 %}" 
@@ -400,7 +399,7 @@
                         <div class="row g-2">
                             <div class="col-6">
                                 <small class="text-muted d-block">Threat Level</small>
-                                <span class="badge bg-{{ 'success' if prediction.threat_level == 'Low' else ('warning' if prediction.threat_level == 'Medium' else ('danger' if prediction.threat_level == 'High' else 'dark')) }} fs-6">
+                                <span class="badge {% if prediction.threat_level == 'Low' %}bg-success{% elif prediction.threat_level == 'Medium' %}bg-warning{% elif prediction.threat_level == 'High' %}bg-danger{% else %}bg-dark{% endif %} fs-6">
                                     {{ prediction.threat_level|upper }}
                                 </span>
                             </div>

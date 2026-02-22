@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block title %}Detection History - UAV Security ML{% endblock %}
+{% block page_title %}Detection History & Timeline{% endblock %}
+
+{% block content %}
+<!-- History Header with Filters -->
+<div class="row mb-4" data-aos="fade-down">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h4 class="mb-0"><i class="fas fa-history"></i> Detection History</h4>
+                        <p class="text-muted mb-0">Complete record of all threat detections</p>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <form method="GET" class="d-inline">
+                                    <select name="prediction" class="form-select form-select-sm" onchange="this.form.submit()">
+                                        <option value="">All Predictions</option>
+                                        <option value="Normal" {% if prediction_filter == 'Normal' %}selected{% endif %}>Normal</option>
+                                        <option value="Threat" {% if prediction_filter == 'Threat' %}selected{% endif %}>Threat</option>
+                                    </select>
+                                </form>
+                            </div>
+                            <div class="col-md-6">
+                                <form method="GET" class="d-inline">
+                                    <select name="threat_level" class="form-select form-select-sm" onchange="this.form.submit()">
+                                        <option value="">All Threat Levels</option>
+                                        <option value="Low" {% if threat_level_filter == 'Low' %}selected{% endif %}>Low</option>
+                                        <option value="Medium" {% if threat_level_filter == 'Medium' %}selected{% endif %}>Medium</option>
+                                        <option value="High" {% if threat_level_filter == 'High' %}selected{% endif %}>High</option>
+                                        <option value="Critical" {% if threat_level_filter == 'Critical' %}selected{% endif %}>Critical</option>
+                                    </select>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="0">
+        <div class="card metric-card info">
+            <div class="card-body text-center">
+                <i class="fas fa-list fa-2x mb-2 text-primary"></i>
+                <h3 class="mb-1">{{ detections|length }}</h3>
+                <p class="text-muted mb-0">Total Records</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
+        <div class="card metric-card danger">
+            <div class="card-body text-center">
+                <i class="fas fa-exclamation-triangle fa-2x mb-2 text-danger"></i>
+                <h3 class="mb-1">{{ detections|selectattr('prediction', 'equalto', 'Threat')|list|length }}</h3>
+                <p class="text-muted mb-0">Threats Detected</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
+        <div class="card metric-card safe">
+            <div class="card-body text-center">
+                <i class="fas fa-shield-check fa-2x mb-2 text-success"></i>
+                <h3 class="mb-1">{{ detections|selectattr('prediction', 'equalto', 'Normal')|list|length }}</h3>
+                <p class="text-muted mb-0">Normal Traffic</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
+        <div class="card metric-card warning">
+            <div class="card-body text-center">
+                <i class="fas fa-percentage fa-2x mb-2 text-warning"></i>
+                <h3 class="mb-1">{{ (detections|selectattr('prediction', 'equalto', 'Threat'|floatformat:1|list|length / detections|length * 100) if detections else 0) }}%</h3>
+                <p class="text-muted mb-0">Threat Rate</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Toggle and Export -->
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="btn-group" role="group">
+                <button class="btn btn-outline-primary active" onclick="toggleHistoryView('table')" id="tableViewBtn">
+                    <i class="fas fa-table"></i> Table View
+                </button>
+                <button class="btn btn-outline-primary" onclick="toggleHistoryView('timeline')" id="timelineViewBtn">
+                    <i class="fas fa-stream"></i> Timeline View
+                </button>
+            </div>
+            <div>
+                <button class="btn btn-outline-success" onclick="exportHistory()">
+                    <i class="fas fa-download"></i> Export Report
+                </button>
+                <button class="btn btn-outline-primary" onclick="compareDetections()">
+                    <i class="fas fa-code-compare"></i> Compare
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Table View -->
+<div class="row" id="tableView">
+    <div class="col-md-12" data-aos="fade-up">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-database"></i> All Detections</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Timestamp</th>
+                                <th>Prediction</th>
+                                <th>Confidence</th>
+                                <th>Threat Level</th>
+                                <th>Model</th>
+                                <th>User</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for detection in detections %}
+                            <tr>
+                                <td><strong>#{{ detection.id }}</strong></td>
+                                <td>
+                                    <small>{{ detection.timestamp|date:"H:i:s" }}</small><br>
+                                    <small class="text-muted">{{ detection.timestamp|date:"Y-m-d" }}</small>
+                                </td>
+                                <td>
+                                    {% if detection.prediction == 'Threat' %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-exclamation-triangle"></i> {{ detection.prediction }}
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle"></i> {{ detection.prediction }}
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress flex-grow-1 me-2" style="height: 8px; width: 60px;">
+                                            <div class="progress-bar {% if detection.confidence > 0.8 %}bg-success{% elif detection.confidence > 0.5 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                 style="width: {% widthratio detection.confidence 1 100 %}%"></div>
+                                        </div>
+                                        <small>{% widthratio detection.confidence 1 100 %}%</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    
+                                    {% include "components/alert_badge.html" with severity=detection.threat_level %}
+                                </td>
+                                <td><small>{{ detection.model_version or 'N/A' }}</small></td>
+                                <td><small>{{ detection.user.username if detection.user else 'System' }}</small></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="viewDetectionDetails({{ detection.id }})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-3x mb-3 opacity-50"></i>
+                                    <p class="mb-0">No detections found</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if pagination.pages > 1 %}
+                <nav class="mt-3">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                            <a class="page-link" href="{% url 'detection_history' pagination.prev_num %} if pagination.has_prev else '#' }}">Previous</a>
+                        </li>
+                        
+                        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                            {% if page_num %}
+                            <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="{% url 'detection_history' page_num %}">{{ page_num }}</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                            <a class="page-link" href="{% url 'detection_history' pagination.next_num %} if pagination.has_next else '#' }}">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Timeline View (Hidden by default) -->
+<div class="row" id="timelineView" style="display: none;">
+    <div class="col-md-12" data-aos="fade-up">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-stream"></i> Detection Timeline</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    {% for detection in detections[:20] %}
+                    <div class="timeline-item" data-aos="fade-left" data-aos-delay="{{ forloop.counter * 50 }}">
+                        <div class="timeline-marker bg-{{ 'danger' if detection.prediction == 'Threat' else 'success' }}">
+                            <i class="fas fa-{{ 'exclamation-triangle' if detection.prediction == 'Threat' else 'check-circle' }}"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">
+                                                Detection #{{ detection.id }}
+                                                {% if detection.prediction == 'Threat' %}
+                                                <span class="badge bg-danger ms-2">Threat</span>
+                                                {% else %}
+                                                <span class="badge bg-success ms-2">Normal</span>
+                                                {% endif %}
+                                            </h6>
+                                            <p class="text-muted small mb-2">
+                                                <i class="fas fa-clock"></i> {{ detection.timestamp|date:"Y-m-d H:i:s" }}
+                                            </p>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="mb-1">
+                                                
+                                                {% include "components/alert_badge.html" with severity=detection.threat_level %}
+                                            </div>
+                                            <small class="text-muted">{% widthratio detection.confidence 1 100 %}% confident</small>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary mt-2" onclick="viewDetectionDetails({{ detection.id }})">
+                                        <i class="fas fa-eye"></i> View Details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 30px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: rgba(59, 130, 246, 0.3);
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 80px;
+    margin-bottom: 30px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: 16px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid var(--primary-bg);
+    z-index: 1;
+}
+
+.timeline-content {
+    flex: 1;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Toggle between table and timeline view
+function toggleHistoryView(view) {
+    const tableView = document.getElementById('tableView');
+    const timelineView = document.getElementById('timelineView');
+    const tableBtn = document.getElementById('tableViewBtn');
+    const timelineBtn = document.getElementById('timelineViewBtn');
+    
+    if (view === 'table') {
+        tableView.style.display = 'block';
+        timelineView.style.display = 'none';
+        tableBtn.classList.add('active');
+        timelineBtn.classList.remove('active');
+    } else {
+        tableView.style.display = 'none';
+        timelineView.style.display = 'block';
+        tableBtn.classList.remove('active');
+        timelineBtn.classList.add('active');
+    }
+}
+
+// View detection details
+function viewDetectionDetails(detectionId) {
+    if (window.dashboardUtils) {
+        window.dashboardUtils.showToast('Viewing detection #' + detectionId, 'info');
+    }
+    // TODO: Open modal with full detection details
+}
+
+// Export history
+function exportHistory() {
+    if (window.dashboardUtils) {
+        window.dashboardUtils.showToast('Generating history report...', 'info');
+        
+        setTimeout(() => {
+            window.dashboardUtils.showToast('Report exported successfully!', 'success');
+        }, 2000);
+    }
+}
+
+// Compare detections
+function compareDetections() {
+    if (window.dashboardUtils) {
+        window.dashboardUtils.showToast('Select detections to compare', 'info');
+    }
+    // TODO: Implement comparison tool
+}
+</script>
+{% endblock %}

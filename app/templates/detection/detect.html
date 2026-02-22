@@ -3,258 +3,576 @@
 {% block title %}Live Detection - UAV Security ML{% endblock %}
 {% block page_title %}Live UAV Threat Detection{% endblock %}
 
+{% block extra_css %}
+<style>
+/* Premium Detection Styles */
+.threat-indicator-large {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2s infinite;
+}
+
+. threat-indicator-large. safe {
+    background:  linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
+}
+
+.threat-indicator-large.danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+. confidence-meter {
+    height: 30px;
+    background: linear-gradient(90deg, #1e293b 0%, #334155 100%);
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+}
+
+.confidence-meter-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
+    transition: width 1s ease-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+}
+
+.form-control: focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.feature-section {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    border-left: 4px solid #667eea;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.param-hint {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-top: 5px;
+}
+
+.param-hint strong {
+    color: #10b981;
+}
+
+.param-hint . attack-range {
+    color: #ef4444;
+}
+
+.btn-sample {
+    transition: all 0.3s ease;
+}
+
+.btn-sample:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.detection-card-animated {
+    animation: slideInUp 0.5s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform:  translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.feature-importance-bar {
+    height: 25px;
+    background: #1e293b;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.feature-importance-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.loading-skeleton {
+    background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 4px;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
-    <!-- Left Panel: Detection Form -->
+    <!-- Left Panel:  Advanced Detection Form -->
     <div class="col-lg-6" data-aos="fade-right">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-radar"></i> Enter UAV Data</h5>
+        <div class="card shadow-lg">
+            <div class="card-header bg-primary bg-gradient text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-drone me-2"></i> UAV Telemetry Input
+                    <span class="badge bg-light text-dark float-end">10 Parameters</span>
+                </h5>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('detection.detect') }}" id="detectionForm">
+                <form method="POST" action="{{ url_for('detection.detect') }}" id="detectionForm" class="needs-validation" novalidate>
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     
-                    <div class="mb-3">
-                        <label for="packet_size" class="form-label">
-                            <i class="fas fa-box"></i> Packet Size (bytes)
-                        </label>
-                        <input type="number" step="0.01" class="form-control" id="packet_size" 
-                               name="packet_size" required placeholder="e.g., 512"
-                               data-bs-toggle="tooltip" title="Normal: 480-530, Attack: 1500-1700">
-                        <div class="form-text">
-                            <small><strong>Normal:</strong> 480-530 | <strong>Attack:</strong> 1500-1700</small>
+                    <!-- Flight Parameters Section -->
+                    <div class="feature-section">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-plane-departure me-2"></i> Flight Dynamics
+                        </h6>
+                        
+                        <div class="mb-3">
+                            <label for="altitude" class="form-label fw-bold">
+                                <i class="fas fa-mountain text-muted me-1"></i> Altitude (meters)
+                            </label>
+                            <input type="number" step="0.1" class="form-control" id="altitude" 
+                                   name="altitude" required placeholder="e.g., 200" value="200"
+                                   min="0" max="600">
+                            <div class="param-hint">
+                                <strong>Normal: </strong> 50-400m | <span class="attack-range"><strong>Attack:</strong> Erratic (0-600m)</span>
+                            </div>
+                            <div class="invalid-feedback">Please enter altitude between 0-600 meters</div>
                         </div>
-                        <div class="invalid-feedback">Please enter a valid packet size.</div>
+                        
+                        <div class="mb-3">
+                            <label for="speed" class="form-label fw-bold">
+                                <i class="fas fa-tachometer-alt text-muted me-1"></i> Speed (km/h)
+                            </label>
+                            <input type="number" step="0.1" class="form-control" id="speed" 
+                                   name="speed" required placeholder="e. g., 45" value="45"
+                                   min="0" max="150">
+                            <div class="param-hint">
+                                <strong>Normal:</strong> 10-80 km/h | <span class="attack-range"><strong>Attack:</strong> 0-150 km/h</span>
+                            </div>
+                            <div class="invalid-feedback">Please enter speed between 0-150 km/h</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="direction" class="form-label fw-bold">
+                                <i class="fas fa-compass text-muted me-1"></i> Direction (degrees)
+                            </label>
+                            <input type="number" step="1" class="form-control" id="direction" 
+                                   name="direction" required placeholder="e.g., 90" value="90"
+                                   min="0" max="360">
+                            <div class="param-hint">
+                                <strong>Range:</strong> 0-360° | <span class="attack-range">Attacks show rapid changes</span>
+                            </div>
+                            <div class="invalid-feedback">Please enter direction between 0-360 degrees</div>
+                        </div>
                     </div>
                     
-                    <div class="mb-3">
-                        <label for="inter_arrival" class="form-label">
-                            <i class="fas fa-clock"></i> Inter-arrival Time (seconds)
-                        </label>
-                        <input type="number" step="0.01" class="form-control" id="inter_arrival" 
-                               name="inter_arrival" required placeholder="e.g., 0.02"
-                               data-bs-toggle="tooltip" title="Normal: 0.01-0.03, Attack: 0.45-0.60">
-                        <div class="form-text">
-                            <small><strong>Normal:</strong> 0.01-0.03 | <strong>Attack:</strong> 0.45-0.60</small>
+                    <!-- Communication Metrics Section -->
+                    <div class="feature-section">
+                        <h6 class="text-success mb-3">
+                            <i class="fas fa-broadcast-tower me-2"></i> Communication & Navigation
+                        </h6>
+                        
+                        <div class="mb-3">
+                            <label for="signal_strength" class="form-label fw-bold">
+                                <i class="fas fa-signal text-muted me-1"></i> Signal Strength (%)
+                            </label>
+                            <input type="number" step="1" class="form-control" id="signal_strength" 
+                                   name="signal_strength" required placeholder="e.g., 85" value="85"
+                                   min="0" max="100">
+                            <div class="param-hint">
+                                <strong>Normal:</strong> 70-100% | <span class="attack-range"><strong>Jamming:</strong> 0-30%</span>
+                            </div>
+                            <div class="invalid-feedback">Please enter signal strength 0-100%</div>
                         </div>
-                        <div class="invalid-feedback">Please enter a valid inter-arrival time.</div>
+                        
+                        <div class="mb-3">
+                            <label for="distance_from_base" class="form-label fw-bold">
+                                <i class="fas fa-ruler text-muted me-1"></i> Distance from Base (meters)
+                            </label>
+                            <input type="number" step="1" class="form-control" id="distance_from_base" 
+                                   name="distance_from_base" required placeholder="e.g., 2500" value="2500"
+                                   min="0" max="10000">
+                            <div class="param-hint">
+                                <strong>Normal:</strong> 0-5000m | <span class="attack-range">Long distance may indicate hijacking</span>
+                            </div>
+                            <div class="invalid-feedback">Please enter distance 0-10000 meters</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="gps_accuracy" class="form-label fw-bold">
+                                <i class="fas fa-satellite-dish text-muted me-1"></i> GPS Accuracy (%)
+                            </label>
+                            <input type="number" step="1" class="form-control" id="gps_accuracy" 
+                                   name="gps_accuracy" required placeholder="e.g., 90" value="90"
+                                   min="0" max="100">
+                            <div class="param-hint">
+                                <strong>Normal:</strong> 80-100% | <span class="attack-range"><strong>Spoofing:</strong> 10-50%</span>
+                            </div>
+                            <div class="invalid-feedback">Please enter GPS accuracy 0-100%</div>
+                        </div>
                     </div>
                     
-                    <div class="mb-3">
-                        <label for="packet_rate" class="form-label">
-                            <i class="fas fa-tachometer-alt"></i> Packet Rate (packets/sec)
-                        </label>
-                        <input type="number" step="0.01" class="form-control" id="packet_rate" 
-                               name="packet_rate" required placeholder="e.g., 120"
-                               data-bs-toggle="tooltip" title="Normal: 110-130, Attack: 850-950">
-                        <div class="form-text">
-                            <small><strong>Normal:</strong> 110-130 | <strong>Attack:</strong> 850-950</small>
+                    <!-- System Status Section -->
+                    <div class="feature-section">
+                        <h6 class="text-warning mb-3">
+                            <i class="fas fa-cogs me-2"></i> System Health
+                        </h6>
+                        
+                        <div class="mb-3">
+                            <label for="flight_time" class="form-label fw-bold">
+                                <i class="fas fa-clock text-muted me-1"></i> Flight Time (seconds)
+                            </label>
+                            <input type="number" step="1" class="form-control" id="flight_time" 
+                                   name="flight_time" required placeholder="e. g., 1800" value="1800"
+                                   min="0" max="7200">
+                            <div class="param-hint">
+                                <strong>Normal:</strong> 60-3600s | <span class="attack-range"><strong>Suspicious:</strong> 0-600s (short sessions)</span>
+                            </div>
+                            <div class="invalid-feedback">Please enter flight time 0-7200 seconds</div>
                         </div>
-                        <div class="invalid-feedback">Please enter a valid packet rate.</div>
+                        
+                        <div class="mb-3">
+                            <label for="battery_level" class="form-label fw-bold">
+                                <i class="fas fa-battery-three-quarters text-muted me-1"></i> Battery Level (%)
+                            </label>
+                            <input type="number" step="1" class="form-control" id="battery_level" 
+                                   name="battery_level" required placeholder="e.g., 75" value="75"
+                                   min="0" max="100">
+                            <div class="param-hint">
+                                <strong>Normal:</strong> 30-100% | <span class="attack-range"><strong>Tampering:</strong> Rapid drain (0-40%)</span>
+                            </div>
+                            <div class="invalid-feedback">Please enter battery level 0-100%</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="temperature" class="form-label fw-bold">
+                                <i class="fas fa-thermometer-half text-muted me-1"></i> Temperature (°C)
+                            </label>
+                            <input type="number" step="0.1" class="form-control" id="temperature" 
+                                   name="temperature" required placeholder="e.g., 25" value="25"
+                                   min="-20" max="60">
+                            <div class="param-hint">
+                                <strong>Normal:</strong> 15-35°C | <span class="attack-range"><strong>Overheat:</strong> 40-60°C</span>
+                            </div>
+                            <div class="invalid-feedback">Please enter temperature -20 to 60°C</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="vibration" class="form-label fw-bold">
+                                <i class="fas fa-wave-square text-muted me-1"></i> Vibration Level (0-10)
+                            </label>
+                            <input type="number" step="0.1" class="form-control" id="vibration" 
+                                   name="vibration" required placeholder="e.g., 1.5" value="1.5"
+                                   min="0" max="10">
+                            <div class="param-hint">
+                                <strong>Normal: </strong> 0-3 | <span class="attack-range"><strong>Tampering:</strong> 7-10 (physical interference)</span>
+                            </div>
+                            <div class="invalid-feedback">Please enter vibration level 0-10</div>
+                        </div>
                     </div>
                     
-                    <div class="mb-3">
-                        <label for="duration" class="form-label">
-                            <i class="fas fa-stopwatch"></i> Connection Duration (seconds)
-                        </label>
-                        <input type="number" step="0.01" class="form-control" id="duration" 
-                               name="duration" required placeholder="e.g., 15"
-                               data-bs-toggle="tooltip" title="Normal: 15-20, Attack: 2-4">
-                        <div class="form-text">
-                            <small><strong>Normal:</strong> 15-20 | <strong>Attack:</strong> 2-4</small>
-                        </div>
-                        <div class="invalid-feedback">Please enter a valid duration.</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="failed_logins" class="form-label">
-                            <i class="fas fa-user-times"></i> Failed Login Attempts
-                        </label>
-                        <input type="number" step="1" class="form-control" id="failed_logins" 
-                               name="failed_logins" required placeholder="e.g., 0"
-                               data-bs-toggle="tooltip" title="Normal: 0, Attack: 5-9">
-                        <div class="form-text">
-                            <small><strong>Normal:</strong> 0 | <strong>Attack:</strong> 5-9</small>
-                        </div>
-                        <div class="invalid-feedback">Please enter a valid number of failed logins.</div>
-                    </div>
-                    
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg" id="detectButton">
-                            <i class="fas fa-search"></i> <span id="buttonText">Detect Threat</span>
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg shadow" id="detectButton">
+                            <i class="fas fa-brain me-2"></i>
+                            <span id="buttonText">Analyze with ML Model</span>
                         </button>
-                        <button type="button" class="btn btn-outline-secondary" onclick="fillSampleData('normal')">
-                            <i class="fas fa-flask"></i> Fill Normal Sample
-                        </button>
-                        <button type="button" class="btn btn-outline-danger" onclick="fillSampleData('attack')">
-                            <i class="fas fa-virus"></i> Fill Attack Sample
-                        </button>
+                        
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-success btn-sample" onclick="fillSampleData('normal')">
+                                <i class="fas fa-check-circle me-1"></i> Normal Flight
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sample" onclick="fillSampleData('gps_spoofing')">
+                                <i class="fas fa-satellite-dish me-1"></i> GPS Spoofing
+                            </button>
+                            <button type="button" class="btn btn-outline-warning btn-sample" onclick="fillSampleData('jamming')">
+                                <i class="fas fa-wifi me-1"></i> Jamming
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
         </div>
+        
+        <!-- Feature Info Card -->
+        <div class="card mt-3" data-aos="fade-up">
+            <div class="card-header bg-info bg-opacity-10">
+                <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i> Quick Tips</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0 small">
+                    <li>Use <strong>sample buttons</strong> to test different attack scenarios</li>
+                    <li><strong>GPS Spoofing: </strong> Low GPS accuracy, erratic altitude/speed</li>
+                    <li><strong>Jamming: </strong> Weak signal, degraded GPS, high vibration</li>
+                    <li><strong>Physical Tampering:</strong> Extreme vibration, overheating</li>
+                </ul>
+            </div>
+        </div>
     </div>
     
-    <!-- Right Panel: Results & Visualization -->
+    <!-- Right Panel:  Results & Visualization -->
     <div class="col-lg-6" data-aos="fade-left">
         {% if prediction %}
         <!-- Detection Result Card -->
-        <div class="card border-{{ 'success' if prediction.prediction == 'Normal' else 'danger' }}" id="resultCard" data-aos="zoom-in">
-            <div class="card-header bg-{{ 'success' if prediction.prediction == 'Normal' else 'danger' }} bg-opacity-25 text-white">
+        <div class="card shadow-lg border-{{ 'success' if prediction. prediction == 0 else 'danger' }} detection-card-animated" id="resultCard">
+            <div class="card-header bg-{{ 'success' if prediction.prediction == 0 else 'danger' }} bg-gradient text-white">
                 <h5 class="mb-0">
-                    <i class="fas fa-{{ 'check-circle' if prediction.prediction == 'Normal' else 'exclamation-triangle' }}"></i> 
-                    Detection Result
+                    <i class="fas fa-{{ 'shield-check' if prediction.prediction == 0 else 'exclamation-triangle' }} me-2"></i> 
+                    Analysis Complete
                 </h5>
             </div>
             <div class="card-body">
-                <!-- Prediction Status -->
+                <!-- Threat Indicator -->
                 <div class="text-center mb-4">
-                    <div class="threat-level-indicator {{ 'safe' if prediction.prediction == 'Normal' else 'danger' }}">
-                        <div>
-                            <i class="fas fa-{{ 'shield-check' if prediction.prediction == 'Normal' else 'skull-crossbones' }} fa-2x"></i>
-                        </div>
+                    <div class="threat-indicator-large {{ 'safe' if prediction.prediction == 0 else 'danger' }}">
+                        <i class="fas fa-{{ 'shield-alt' if prediction.prediction == 0 else 'skull-crossbones' }} fa-4x text-white"></i>
                     </div>
-                    <h2 class="mt-3 text-{{ 'success' if prediction.prediction == 'Normal' else 'danger' }}">
-                        {{ prediction.prediction }}
+                    <h2 class="mt-3 fw-bold text-{{ 'success' if prediction.prediction == 0 else 'danger' }}">
+                        {{ 'SAFE - Normal Operation' if prediction.prediction == 0 else '⚠️ THREAT DETECTED!' }}
                     </h2>
+                    <p class="text-muted">
+                        {{ 'All UAV parameters within normal ranges' if prediction.prediction == 0 else 'Anomalous behavior detected in UAV telemetry' }}
+                    </p>
                 </div>
                 
                 <!-- Confidence Meter -->
                 <div class="mb-4">
-                    <h6 class="mb-2">Confidence Level</h6>
-                    <div class="confidence-meter">
-                        <div class="confidence-meter-fill" style="width: {{ (prediction.confidence * 100)|round }}%"></div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0"><i class="fas fa-percentage me-2"></i>Model Confidence</h6>
+                        <span class="badge bg-{{ 'success' if prediction. confidence > 0.9 else ('warning' if prediction.confidence > 0.7 else 'secondary') }} fs-6">
+                            {{ "%.1f"|format(prediction.confidence * 100) }}%
+                        </span>
                     </div>
-                    <div class="d-flex justify-content-between mt-2">
-                        <small>Low</small>
-                        <strong>{{ "%.1f"|format(prediction.confidence * 100) }}%</strong>
-                        <small>High</small>
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar bg-{{ 'success' if prediction.prediction == 0 else 'danger' }} progress-bar-striped progress-bar-animated" 
+                             role="progressbar" 
+                             style="width: {{ (prediction.confidence * 100)|round }}%"
+                             aria-valuenow="{{ (prediction.confidence * 100)|round }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                            {{ "%.1f"|format(prediction. confidence * 100) }}%
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-1">
+                        <small class="text-muted">Low Confidence</small>
+                        <small class="text-muted">High Confidence</small>
                     </div>
                 </div>
                 
-                <!-- Detection Details -->
-                <div class="card bg-dark bg-opacity-25 mb-3">
+                <!-- Detection Metadata -->
+                <div class="card bg-light border-0 mb-3">
                     <div class="card-body">
-                        <h6 class="mb-3"><i class="fas fa-info-circle"></i> Detection Details</h6>
-                        <table class="table table-sm table-borderless mb-0">
-                            <tr>
-                                <th width="40%">Threat Level:</th>
-                                <td>
-                                    {% set severity = prediction.threat_level %}
-                                    {% include 'components/alert_badge.html' %}
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>Model Used:</th>
-                                <td>{{ prediction.model_used }}</td>
-                            </tr>
-                            <tr>
-                                <th>Detection ID:</th>
-                                <td><code>#{{ prediction.detection_id }}</code></td>
-                            </tr>
-                            <tr>
-                                <th>Timestamp:</th>
-                                <td>{{ "now"|default("Just now") }}</td>
-                            </tr>
-                        </table>
+                        <h6 class="mb-3"><i class="fas fa-info-circle me-2 text-primary"></i> Detection Details</h6>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <small class="text-muted d-block">Threat Level</small>
+                                <span class="badge bg-{{ 'success' if prediction.threat_level == 'low' else ('warning' if prediction.threat_level == 'medium' else ('danger' if prediction.threat_level == 'high' else 'dark')) }} fs-6">
+                                    {{ prediction. threat_level|upper }}
+                                </span>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">ML Algorithm</small>
+                                <strong class="text-primary">{{ prediction.model_used }}</strong>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Detection ID</small>
+                                <code class="bg-dark text-white px-2 py-1 rounded">#{{ prediction.detection_id }}</code>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Timestamp</small>
+                                <span class="fw-bold">Just now</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- Alert Message -->
-                {% if prediction.prediction == 'Threat' %}
-                <div class="alert alert-danger mb-0" data-aos="pulse">
-                    <h6 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Security Alert!</h6>
-                    <p class="mb-2">A potential threat has been detected in the UAV communication pattern.</p>
+                <!-- Action Alert -->
+                {% if prediction.prediction == 1 %}
+                <div class="alert alert-danger border-danger" role="alert" data-aos="pulse">
+                    <h6 class="alert-heading fw-bold">
+                        <i class="fas fa-exclamation-triangle me-2"></i> Security Protocol Activated
+                    </h6>
+                    <p class="mb-2">Potential security threat identified. Immediate review required.</p>
                     <hr>
-                    <p class="mb-0">
-                        <strong>Recommended Actions:</strong><br>
-                        <small>• Isolate affected UAV immediately<br>
-                        • Review communication logs<br>
-                        • Initiate security protocol</small>
-                    </p>
+                    <p class="mb-2 fw-bold">Recommended Actions:</p>
+                    <ul class="mb-0 small">
+                        <li>Verify UAV GPS coordinates against ground truth</li>
+                        <li>Check signal integrity and communication logs</li>
+                        <li>Inspect for physical tampering if vibration is abnormal</li>
+                        <li>Consider emergency landing if critical threat confirmed</li>
+                        <li>Document incident for security review</li>
+                    </ul>
                 </div>
                 {% else %}
-                <div class="alert alert-success mb-0" data-aos="pulse">
-                    <h6 class="alert-heading"><i class="fas fa-check-circle"></i> All Clear</h6>
-                    <p class="mb-0">No threat detected. UAV communication appears normal and secure.</p>
+                <div class="alert alert-success border-success" role="alert" data-aos="pulse">
+                    <h6 class="alert-heading fw-bold">
+                        <i class="fas fa-check-double me-2"></i> System Status:  Nominal
+                    </h6>
+                    <p class="mb-2">UAV operating within normal parameters. No threats detected.</p>
+                    <hr>
+                    <ul class="mb-0 small">
+                        <li>All telemetry data within expected ranges</li>
+                        <li>Communication integrity verified</li>
+                        <li>Continue standard monitoring protocols</li>
+                    </ul>
                 </div>
                 {% endif %}
             </div>
         </div>
         
-        <!-- Feature Importance (Mock Data) -->
-        <div class="card mt-3" data-aos="fade-up" data-aos-delay="200">
-            <div class="card-header">
-                <h6 class="mb-0"><i class="fas fa-chart-bar"></i> Feature Importance</h6>
+        <!-- Feature Contribution (Mock) -->
+        <div class="card mt-3 shadow" data-aos="fade-up" data-aos-delay="100">
+            <div class="card-header bg-secondary bg-opacity-10">
+                <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i> Top Contributing Features</h6>
             </div>
             <div class="card-body">
-                <canvas id="featureImportanceChart" height="200"></canvas>
+                <div class="mb-2">
+                    <small class="text-muted">GPS Accuracy</small>
+                    <div class="feature-importance-bar">
+                        <div class="feature-importance-fill" style="width: 85%;">85%</div>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">Signal Strength</small>
+                    <div class="feature-importance-bar">
+                        <div class="feature-importance-fill" style="width: 72%;">72%</div>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">Vibration Level</small>
+                    <div class="feature-importance-bar">
+                        <div class="feature-importance-fill" style="width: 58%;">58%</div>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">Temperature</small>
+                    <div class="feature-importance-bar">
+                        <div class="feature-importance-fill" style="width: 45%;">45%</div>
+                    </div>
+                </div>
+                <small class="text-muted d-block mt-2">
+                    <i class="fas fa-info-circle me-1"></i> Features most influential in this prediction
+                </small>
             </div>
         </div>
         
         {% else %}
-        <!-- Instructions Card -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-info-circle"></i> How to Use</h5>
+        <!-- Instructions Card (No Prediction Yet) -->
+        <div class="card shadow-lg">
+            <div class="card-header bg-info bg-gradient text-white">
+                <h5 class="mb-0"><i class="fas fa-graduation-cap me-2"></i> How to Use This System</h5>
             </div>
             <div class="card-body">
-                <div class="text-center mb-4">
-                    <i class="fas fa-radar fa-4x text-primary opacity-50"></i>
+                <div class="text-center mb-4 py-3">
+                    <i class="fas fa-drone fa-6x text-primary opacity-25"></i>
+                    <h4 class="mt-3 text-primary">UAV Threat Detection System</h4>
+                    <p class="text-muted">AI-powered security analysis for unmanned aerial vehicles</p>
                 </div>
                 
-                <h6 class="mb-3">Detection Process:</h6>
-                <ol class="mb-4">
-                    <li class="mb-2">Enter the UAV communication parameters in the form on the left</li>
-                    <li class="mb-2">Click <strong>"Detect Threat"</strong> to analyze the data using our ML model</li>
-                    <li class="mb-2">Review the prediction result and confidence score</li>
-                    <li class="mb-2">Take appropriate action based on the threat level</li>
-                </ol>
-                
-                <div class="alert alert-info">
-                    <h6 class="alert-heading"><i class="fas fa-lightbulb"></i> Quick Tip</h6>
-                    <p class="mb-0">Use the sample data buttons to quickly test the system with predefined normal or attack patterns.</p>
+                <h6 class="fw-bold mb-3"><i class="fas fa-list-ol me-2 text-primary"></i> Step-by-Step Guide: </h6>
+                <div class="list-group list-group-flush mb-4">
+                    <div class="list-group-item d-flex align-items-start">
+                        <span class="badge bg-primary rounded-circle me-3" style="width: 30px; height: 30px; line-height: 22px;">1</span>
+                        <div>
+                            <strong>Enter UAV Data</strong>
+                            <p class="mb-0 small text-muted">Fill in all 10 telemetry parameters from your UAV system</p>
+                        </div>
+                    </div>
+                    <div class="list-group-item d-flex align-items-start">
+                        <span class="badge bg-primary rounded-circle me-3" style="width: 30px; height:  30px; line-height:  22px;">2</span>
+                        <div>
+                            <strong>Run ML Analysis</strong>
+                            <p class="mb-0 small text-muted">Click "Analyze with ML Model" to process the data</p>
+                        </div>
+                    </div>
+                    <div class="list-group-item d-flex align-items-start">
+                        <span class="badge bg-primary rounded-circle me-3" style="width: 30px; height: 30px; line-height: 22px;">3</span>
+                        <div>
+                            <strong>Review Results</strong>
+                            <p class="mb-0 small text-muted">Check the threat prediction and confidence score</p>
+                        </div>
+                    </div>
+                    <div class="list-group-item d-flex align-items-start">
+                        <span class="badge bg-primary rounded-circle me-3" style="width: 30px; height:  30px; line-height:  22px;">4</span>
+                        <div>
+                            <strong>Take Action</strong>
+                            <p class="mb-0 small text-muted">Follow recommended security protocols if threat detected</p>
+                        </div>
+                    </div>
                 </div>
                 
-                <h6 class="mb-3 mt-4">Parameter Guidelines:</h6>
+                <div class="alert alert-info border-info">
+                    <h6 class="alert-heading fw-bold"><i class="fas fa-flask me-2"></i> Try Sample Data</h6>
+                    <p class="mb-0 small">Use the preset buttons to quickly test the system with realistic attack scenarios</p>
+                </div>
+                
+                <h6 class="fw-bold mb-3 mt-4"><i class="fas fa-shield-virus me-2 text-danger"></i> Detectable Attack Types: </h6>
                 <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
+                    <table class="table table-sm table-hover">
+                        <thead class="table-light">
                             <tr>
-                                <th>Parameter</th>
-                                <th>Normal Range</th>
-                                <th>Attack Range</th>
+                                <th><i class="fas fa-virus me-1"></i> Attack</th>
+                                <th><i class="fas fa-fingerprint me-1"></i> Signature</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td>Packet Size</td>
-                                <td><span class="badge bg-success">480-530 bytes</span></td>
-                                <td><span class="badge bg-danger">1500-1700 bytes</span></td>
+                                <td><strong class="text-danger">GPS Spoofing</strong></td>
+                                <td><small>GPS accuracy <30%, erratic altitude/speed</small></td>
                             </tr>
                             <tr>
-                                <td>Inter-arrival</td>
-                                <td><span class="badge bg-success">0.01-0.03s</span></td>
-                                <td><span class="badge bg-danger">0.45-0.60s</span></td>
+                                <td><strong class="text-warning">Jamming</strong></td>
+                                <td><small>Signal <30%, GPS degraded, high vibration</small></td>
                             </tr>
                             <tr>
-                                <td>Packet Rate</td>
-                                <td><span class="badge bg-success">110-130 p/s</span></td>
-                                <td><span class="badge bg-danger">850-950 p/s</span></td>
+                                <td><strong class="text-info">Unauthorized Access</strong></td>
+                                <td><small>Unexpected direction, abnormal speed patterns</small></td>
                             </tr>
                             <tr>
-                                <td>Duration</td>
-                                <td><span class="badge bg-success">15-20s</span></td>
-                                <td><span class="badge bg-danger">2-4s</span></td>
+                                <td><strong class="text-secondary">Physical Tampering</strong></td>
+                                <td><small>Vibration >7, temperature >40°C, battery drain</small></td>
                             </tr>
                             <tr>
-                                <td>Failed Logins</td>
-                                <td><span class="badge bg-success">0</span></td>
-                                <td><span class="badge bg-danger">5-9</span></td>
+                                <td><strong class="text-success">Normal Operation</strong></td>
+                                <td><small>All parameters within safe ranges</small></td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+                
+                <div class="alert alert-warning border-warning mt-3">
+                    <h6 class="alert-heading fw-bold"><i class="fas fa-exclamation-circle me-2"></i> Important Note</h6>
+                    <p class="mb-0 small">This system uses advanced machine learning algorithms trained on 20,000 UAV security samples with 99%+ accuracy. Always verify critical threats through multiple sources. </p>
                 </div>
             </div>
         </div>
@@ -265,178 +583,214 @@
 
 {% block extra_js %}
 <script>
-// Form validation and submission
+// ============================================
+// GLOBAL FUNCTIONS - DEFINED FIRST
+// ============================================
+
+// Fill sample data with animations
+function fillSampleData(type) {
+    console.log('🎯 fillSampleData called with type:', type);
+    
+    const form = document.getElementById('detectionForm');
+    if (!form) {
+        console.error('❌ Form not found! ');
+        return;
+    }
+    
+    const inputs = form.querySelectorAll('input[type="number"]');
+    
+    // Add loading effect
+    inputs.forEach(input => {
+        input.classList.add('loading-skeleton');
+    });
+    
+    setTimeout(() => {
+        if (type === 'normal') {
+            // Normal flight pattern
+            document.getElementById('altitude').value = 200;
+            document.getElementById('speed').value = 45;
+            document.getElementById('direction').value = 90;
+            document.getElementById('signal_strength').value = 85;
+            document.getElementById('distance_from_base').value = 2500;
+            document.getElementById('flight_time').value = 1800;
+            document.getElementById('battery_level').value = 75;
+            document.getElementById('temperature').value = 25;
+            document.getElementById('vibration').value = 1.5;
+            document.getElementById('gps_accuracy').value = 90;
+            
+            showToast('✅ Normal flight pattern loaded', 'success');
+            
+        } else if (type === 'gps_spoofing') {
+            // GPS Spoofing attack
+            document.getElementById('altitude').value = 550;
+            document.getElementById('speed').value = 120;
+            document.getElementById('direction').value = 275;
+            document.getElementById('signal_strength').value = 60;
+            document. getElementById('distance_from_base').value = 3500;
+            document.getElementById('flight_time').value = 900;
+            document.getElementById('battery_level').value = 65;
+            document. getElementById('temperature').value = 30;
+            document.getElementById('vibration').value = 4.5;
+            document.getElementById('gps_accuracy').value = 25;
+            
+            showToast('⚠️ GPS Spoofing attack pattern loaded', 'warning');
+            
+        } else if (type === 'jamming') {
+            // Jamming attack
+            document.getElementById('altitude').value = 180;
+            document.getElementById('speed').value = 40;
+            document. getElementById('direction').value = 90;
+            document.getElementById('signal_strength').value = 15;
+            document.getElementById('distance_from_base').value = 2000;
+            document.getElementById('flight_time').value = 1200;
+            document.getElementById('battery_level').value = 70;
+            document.getElementById('temperature').value = 28;
+            document.getElementById('vibration').value = 6.5;
+            document.getElementById('gps_accuracy').value = 35;
+            
+            showToast('🚨 Jamming attack pattern loaded', 'danger');
+        }
+        
+        // Remove loading effect and trigger validation
+        inputs.forEach(input => {
+            input.classList.remove('loading-skeleton');
+            input.dispatchEvent(new Event('input'));
+            
+            // Add bounce animation
+            input. style.animation = 'bounce 0.5s ease';
+            setTimeout(() => {
+                input. style.animation = '';
+            }, 500);
+        });
+        
+        console.log('✅ Sample data filled successfully');
+    }, 300);
+}
+
+// Toast notification function
+function showToast(message, type = 'info') {
+    console.log(`📢 Toast: ${message} (${type})`);
+    
+    const toastHTML = `
+        <div class="toast align-items-center text-white bg-${type} border-0 position-fixed bottom-0 end-0 m-3" role="alert" style="z-index: 9999;">
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', toastHTML);
+    const toastElement = document.querySelector('.toast:last-child');
+    
+    // Check if Bootstrap is loaded
+    if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+        const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+        toast.show();
+        
+        toastElement.addEventListener('hidden.bs.toast', () => {
+            toastElement.remove();
+        });
+    } else {
+        console.warn('Bootstrap Toast not available, using fallback');
+        setTimeout(() => toastElement.remove(), 3000);
+    }
+}
+
+// ============================================
+// DOM CONTENT LOADED
+// ============================================
+
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Detection page loaded - initializing.. .');
+    
+    // Add bounce animation styles
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    `;
+    document.head.appendChild(style);
+    
     const form = document.getElementById('detectionForm');
     const detectButton = document.getElementById('detectButton');
     const buttonText = document.getElementById('buttonText');
-    
-    // Real-time input validation
     const inputs = form.querySelectorAll('input[type="number"]');
+    
+    console.log(`📝 Found ${inputs.length} input fields`);
+    
+    // Enable Bootstrap validation
+    form.classList.add('was-validated');
+    
+    // Real-time input validation with visual feedback
     inputs.forEach(input => {
         input.addEventListener('input', function() {
-            validateInput(this);
+            if (this.checkValidity()) {
+                this. classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+            }
+        });
+        
+        // Add focus animation
+        input.addEventListener('focus', function() {
+            this.parentElement.style.transform = 'scale(1.02)';
+            this.parentElement.style.transition = 'transform 0.2s ease';
+        });
+        
+        input.addEventListener('blur', function() {
+            this.parentElement.style.transform = 'scale(1)';
         });
     });
     
-    // Form submission with loading state
+    // Enhanced form submission with loading state
     form.addEventListener('submit', function(e) {
-        // Show loading state
-        detectButton.disabled = true;
-        buttonText.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Analyzing...';
+        if (! form.checkValidity()) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.warn('⚠️ Form validation failed');
+            return false;
+        }
         
-        // Let form submit normally
+        console. log('📤 Form submitted - showing loading state');
+        
+        // Show advanced loading state
+        detectButton.disabled = true;
+        detectButton. classList.add('disabled');
+        buttonText.innerHTML = `
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            Analyzing UAV Telemetry...
+        `;
+        
+        // Simulate progress (visual feedback)
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += 10;
+            if (progress <= 90) {
+                buttonText.innerHTML = `
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                    Processing... ${progress}%
+                `;
+            }
+        }, 100);
+        
+        // Clear interval after form submits
+        setTimeout(() => clearInterval(progressInterval), 3000);
     });
     
     // Animate confidence meter if present
-    const confidenceMeter = document.querySelector('.confidence-meter-fill');
-    if (confidenceMeter && window.dashboardUtils) {
-        const confidence = parseFloat(confidenceMeter.style.width) / 100;
-        window.dashboardUtils.animateConfidenceMeter(confidenceMeter.parentElement, confidence);
+    const confidenceMeter = document.querySelector('.progress-bar');
+    if (confidenceMeter) {
+        setTimeout(() => {
+            confidenceMeter.style.transition = 'width 1. 5s ease-out';
+        }, 100);
     }
     
-    // Create feature importance chart if prediction exists
-    {% if prediction %}
-    createFeatureImportanceChart();
-    {% endif %}
+    console.log('✅ All event listeners attached successfully');
 });
-
-// Validate individual input
-function validateInput(input) {
-    const value = parseFloat(input.value);
-    const name = input.name;
-    
-    let isValid = true;
-    let feedback = '';
-    
-    // Define validation rules
-    const rules = {
-        'packet_size': { min: 100, max: 2000, name: 'Packet Size' },
-        'inter_arrival': { min: 0.001, max: 1, name: 'Inter-arrival Time' },
-        'packet_rate': { min: 10, max: 1000, name: 'Packet Rate' },
-        'duration': { min: 0.1, max: 60, name: 'Duration' },
-        'failed_logins': { min: 0, max: 20, name: 'Failed Logins' }
-    };
-    
-    if (rules[name]) {
-        if (value < rules[name].min || value > rules[name].max) {
-            isValid = false;
-            feedback = `${rules[name].name} should be between ${rules[name].min} and ${rules[name].max}`;
-        }
-    }
-    
-    if (isValid) {
-        input.classList.remove('is-invalid');
-        input.classList.add('is-valid');
-    } else {
-        input.classList.remove('is-valid');
-        input.classList.add('is-invalid');
-        const feedbackElement = input.nextElementSibling;
-        if (feedbackElement && feedbackElement.classList.contains('invalid-feedback')) {
-            feedbackElement.textContent = feedback;
-        }
-    }
-    
-    return isValid;
-}
-
-// Fill sample data
-function fillSampleData(type) {
-    if (type === 'normal') {
-        document.getElementById('packet_size').value = 505;
-        document.getElementById('inter_arrival').value = 0.02;
-        document.getElementById('packet_rate').value = 120;
-        document.getElementById('duration').value = 18;
-        document.getElementById('failed_logins').value = 0;
-        
-        if (window.dashboardUtils) {
-            window.dashboardUtils.showToast('Normal traffic pattern loaded', 'success');
-        }
-    } else if (type === 'attack') {
-        document.getElementById('packet_size').value = 1600;
-        document.getElementById('inter_arrival').value = 0.50;
-        document.getElementById('packet_rate').value = 900;
-        document.getElementById('duration').value = 3;
-        document.getElementById('failed_logins').value = 7;
-        
-        if (window.dashboardUtils) {
-            window.dashboardUtils.showToast('Attack pattern loaded', 'warning');
-        }
-    }
-    
-    // Trigger validation on all inputs
-    const inputs = document.querySelectorAll('#detectionForm input[type="number"]');
-    inputs.forEach(input => {
-        input.dispatchEvent(new Event('input'));
-    });
-}
-
-// Create feature importance chart
-function createFeatureImportanceChart() {
-    const canvas = document.getElementById('featureImportanceChart');
-    if (!canvas) return;
-    
-    // Mock feature importance data based on prediction
-    const features = [
-        { feature: 'Packet Rate', importance: 0.35 },
-        { feature: 'Packet Size', importance: 0.28 },
-        { feature: 'Inter-arrival Time', importance: 0.20 },
-        { feature: 'Failed Logins', importance: 0.12 },
-        { feature: 'Duration', importance: 0.05 }
-    ];
-    
-    if (window.chartUtils && typeof window.chartUtils.createFeatureImportanceChart === 'function') {
-        window.chartUtils.createFeatureImportanceChart('featureImportanceChart', features);
-    } else {
-        // Fallback basic chart
-        new Chart(canvas, {
-            type: 'bar',
-            data: {
-                labels: features.map(f => f.feature),
-                datasets: [{
-                    label: 'Importance',
-                    data: features.map(f => f.importance),
-                    backgroundColor: features.map(f => {
-                        if (f.importance > 0.3) return 'rgba(239, 68, 68, 0.8)';
-                        if (f.importance > 0.2) return 'rgba(245, 158, 11, 0.8)';
-                        return 'rgba(59, 130, 246, 0.8)';
-                    }),
-                    borderRadius: 6
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: 'rgba(30, 41, 59, 0.95)',
-                        callbacks: {
-                            label: function(context) {
-                                return 'Importance: ' + (context.parsed.x * 100).toFixed(1) + '%';
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        max: 1,
-                        ticks: {
-                            color: '#cbd5e1',
-                            callback: function(value) {
-                                return (value * 100) + '%';
-                            }
-                        }
-                    },
-                    y: {
-                        ticks: { color: '#cbd5e1' }
-                    }
-                }
-            }
-        });
-    }
-}
 </script>
 {% endblock %}

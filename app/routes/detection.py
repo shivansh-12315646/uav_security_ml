@@ -23,14 +23,20 @@ def detect():
     
     if request.method == 'POST':
         try:
-            # Extract features from form
+
+            # Extract ALL 10 features from form
             features = [
-                float(request.form.get('packet_size')),
-                float(request.form.get('inter_arrival')),
-                float(request.form.get('packet_rate')),
-                float(request.form.get('duration')),
-                float(request.form.get('failed_logins'))
-            ]
+                float(request.form.get('altitude')),
+                float(request.form.get('speed')),
+                float(request.form.get('direction')),
+                float(request.form.get('signal_strength')),
+                float(request. form.get('distance_from_base')),
+                float(request.form.get('flight_time')),
+                float(request. form.get('battery_level')),
+                float(request.form.get('temperature')),
+                float(request.form.get('vibration')),
+                float(request.form.get('gps_accuracy'))
+                ]
             
             # Make prediction
             result = ml_service.predict(features)

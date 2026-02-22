@@ -1,8 +1,8 @@
-{# 
+{% comment %}
   Alert Badge Component
   Usage: {% include 'components/alert_badge.html' with context %}
   Required variables: severity
-#}
+{% endcomment %}
 {% if severity == 'Critical' %}
     <span class="badge bg-danger badge-glow pulse-danger">{{ severity }}</span>
 {% elif severity == 'High' %}

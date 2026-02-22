@@ -1,2 +1,2 @@
-web: gunicorn --bind 0.0.0.0:$PORT --workers 4 --timeout 120 --access-logfile - --error-logfile - wsgi:app
-worker: celery -A app.celery worker --loglevel=info
+web: gunicorn uav_project.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+release: python manage.py migrate --noinput && python manage.py create_admin && python manage.py collectstatic --noinput

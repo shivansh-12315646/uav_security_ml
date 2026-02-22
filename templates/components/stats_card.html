@@ -1,10 +1,10 @@
-{# 
+{% comment %}
   Stats Card Component
   Usage: {% include 'components/stats_card.html' with context %}
   Required variables: title, value, icon, color, subtext (optional)
-#}
-<div class="col-md-3" data-aos="fade-up" data-aos-delay="{{ delay|default(0) }}">
-    <div class="card metric-card {{ color|default:"info" }}">
+{% endcomment %}
+<div class="col-md-3" data-aos="fade-up" data-aos-delay="{{ delay|default:0 }}">
+    <div class="card metric-card {{ color|default:'info' }}">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center">
                 <div>

@@ -86,11 +86,17 @@ def history(request):
     paginator = Paginator(qs, 20)
     page = paginator.get_page(request.GET.get('page', 1))
 
+    # Pre-compute counts for template stats
+    threat_count = DetectionHistory.objects.exclude(prediction='Normal').count()
+    normal_count = DetectionHistory.objects.filter(prediction='Normal').count()
+
     return render(request, 'detection/history.html', {
         'detections': page.object_list,
         'pagination': page,
         'prediction_filter': prediction_filter,
         'threat_level_filter': threat_level_filter,
+        'threat_count': threat_count,
+        'normal_count': normal_count,
     })
 
 

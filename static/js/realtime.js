@@ -1,5 +1,5 @@
 /**
- * Real-time Updates - WebSocket handling with Flask-SocketIO
+ * Real-time Updates - WebSocket polling fallback
  * Handles live monitoring and real-time data updates
  */
 

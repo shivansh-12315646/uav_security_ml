@@ -16,10 +16,18 @@ def alerts_list(request):
     paginator = Paginator(qs, 20)
     page = paginator.get_page(request.GET.get('page', 1))
 
+    # Pre-compute status counts for template
+    open_count = Alert.objects.filter(status='Open').count()
+    acknowledged_count = Alert.objects.filter(status='Acknowledged').count()
+    resolved_count = Alert.objects.filter(status='Resolved').count()
+
     return render(request, 'alerts/list.html', {
         'alerts': page.object_list,
         'pagination': page,
         'status_filter': status_filter,
+        'open_count': open_count,
+        'acknowledged_count': acknowledged_count,
+        'resolved_count': resolved_count,
     })
 
 

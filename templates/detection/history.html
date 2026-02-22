@@ -59,7 +59,7 @@
         <div class="card metric-card danger">
             <div class="card-body text-center">
                 <i class="fas fa-exclamation-triangle fa-2x mb-2 text-danger"></i>
-                <h3 class="mb-1">{{ detections|selectattr('prediction', 'equalto', 'Threat')|list|length }}</h3>
+                <h3 class="mb-1">{{ threat_count }}</h3>
                 <p class="text-muted mb-0">Threats Detected</p>
             </div>
         </div>
@@ -68,7 +68,7 @@
         <div class="card metric-card safe">
             <div class="card-body text-center">
                 <i class="fas fa-shield-check fa-2x mb-2 text-success"></i>
-                <h3 class="mb-1">{{ detections|selectattr('prediction', 'equalto', 'Normal')|list|length }}</h3>
+                <h3 class="mb-1">{{ normal_count }}</h3>
                 <p class="text-muted mb-0">Normal Traffic</p>
             </div>
         </div>
@@ -162,7 +162,7 @@
                                     
                                     {% include "components/alert_badge.html" with severity=detection.threat_level %}
                                 </td>
-                                <td><small>{{ detection.model_version or 'N/A' }}</small></td>
+                                <td><small>{{ detection.model_version|default:"N/A" }}</small></td>
                                 <td><small>{% if detection.user %}{{ detection.user.username }}{% else %}System{% endif %}</small></td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary" onclick="viewDetectionDetails({{ detection.id }})">
@@ -170,7 +170,7 @@
                                     </button>
                                 </td>
                             </tr>
-                            {% else %}
+                            {% empty %}
                             <tr>
                                 <td colspan="8" class="text-center text-muted py-4">
                                     <i class="fas fa-inbox fa-3x mb-3 opacity-50"></i>
@@ -183,21 +183,17 @@
                 </div>
                 
                 <!-- Pagination -->
-                {% if pagination.pages > 1 %}
+                {% if pagination.paginator.num_pages > 1 %}
                 <nav class="mt-3">
                     <ul class="pagination justify-content-center">
-                        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                            <a class="page-link" href="{% if pagination.has_prev %}{% url 'detection_history' %}?page={{ pagination.previous_page_number }}{% else %}#{% endif %}">Previous</a>
+                        <li class="page-item {% if not pagination.has_previous %}disabled{% endif %}">
+                            <a class="page-link" href="{% if pagination.has_previous %}{% url 'detection_history' %}?page={{ pagination.previous_page_number }}{% else %}#{% endif %}">Previous</a>
                         </li>
                         
-                        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
-                            {% if page_num %}
-                            <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-                                <a class="page-link" href="{% url 'detection_history' page_num %}">{{ page_num }}</a>
+                        {% for page_num in pagination.paginator.page_range %}
+                            <li class="page-item {% if page_num == pagination.number %}active{% endif %}">
+                                <a class="page-link" href="{% url 'detection_history' %}?page={{ page_num }}">{{ page_num }}</a>
                             </li>
-                            {% else %}
-                            <li class="page-item disabled"><span class="page-link">...</span></li>
-                            {% endif %}
                         {% endfor %}
                         
                         <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
@@ -220,8 +216,8 @@
             </div>
             <div class="card-body">
                 <div class="timeline">
-                    {% for detection in detections[:20] %}
-                    <div class="timeline-item" data-aos="fade-left" data-aos-delay="{{ forloop.counter * 50 }}">
+                    {% for detection in detections %}
+                    <div class="timeline-item" data-aos="fade-left" data-aos-delay="100">
                         <div class="timeline-marker {% if detection.prediction == 'Threat' %}bg-danger{% else %}bg-success{% endif %}">
                             <i class="fas {% if detection.prediction == 'Threat' %}fa-exclamation-triangle{% else %}fa-check-circle{% endif %}"></i>
                         </div>

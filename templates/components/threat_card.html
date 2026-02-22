@@ -1,8 +1,8 @@
-{# 
+{% comment %}
   Threat Card Component
   Usage: {% include 'components/threat_card.html' with context %}
   Required variables: detection (detection object)
-#}
+{% endcomment %}
 <div class="card {% if detection.prediction == 'Normal' %}border-success{% else %}border-danger{% endif %} mb-3" data-aos="fade-up">
     <div class="card-header {% if detection.prediction == 'Normal' %}bg-success{% else %}bg-danger{% endif %} bg-opacity-10">
         <h6 class="mb-0">
@@ -30,7 +30,7 @@
                     </tr>
                     <tr>
                         <th>Model:</th>
-                        <td>{{ detection.model_version or 'N/A' }}</td>
+                        <td>{{ detection.model_version|default:"N/A" }}</td>
                     </tr>
                     <tr>
                         <th>Detection ID:</th>

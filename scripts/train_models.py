@@ -35,7 +35,7 @@ from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score,
-    confusion_matrix, classification_report, roc_auc_score, roc_curve
+    confusion_matrix, classification_report
 )
 
 # Suppress warnings for cleaner output
@@ -104,33 +104,50 @@ class MLTrainingPipeline:
         # Prepare features and labels
         print(f"\n📊 Preparing features and labels...")
         X = df[FEATURE_COLUMNS].values
-        y = df['is_threat'].values
-        
+
+        # Use threat_type for multi-class classification
+        if 'threat_type' in df.columns:
+            y_raw = df['threat_type'].values
+        else:
+            # Fallback: map binary is_threat to labels
+            y_raw = np.where(df['is_threat'].values == 0, 'normal', 'unknown_threat')
+
+        # Encode labels
+        self.label_encoder = LabelEncoder()
+        y = self.label_encoder.fit_transform(y_raw)
+
         print(f"   Features shape: {X.shape}")
         print(f"   Labels shape: {y.shape}")
-        print(f"   Normal samples: {(y == 0).sum():,} ({(y == 0).sum() / len(y) * 100:.1f}%)")
-        print(f"   Threat samples: {(y == 1).sum():,} ({(y == 1).sum() / len(y) * 100:.1f}%)")
-        
+        print(f"   Classes: {list(self.label_encoder.classes_)}")
+        for cls, idx in zip(self.label_encoder.classes_,
+                            range(len(self.label_encoder.classes_))):
+            count = (y == idx).sum()
+            print(f"   {cls:30} {count:6,} ({count / len(y) * 100:.1f}%)")
+
         # Split dataset
         print(f"\n✂️  Splitting dataset ({int((1 - TEST_SIZE) * 100)}% train, {int(TEST_SIZE * 100)}% test)...")
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
             X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y
         )
-        
+
         print(f"   Training set: {len(self.X_train):,} samples")
         print(f"   Test set: {len(self.X_test):,} samples")
-        
+
         # Feature scaling
         print(f"\n⚖️  Scaling features with StandardScaler...")
         self.scaler = StandardScaler()
         self.X_train = self.scaler.fit_transform(self.X_train)
         self.X_test = self.scaler.transform(self.X_test)
-        
-        # Save scaler
+
+        # Save scaler and label encoder
         scaler_path = os.path.join(MODELS_DIR, 'scaler.pkl')
         joblib.dump(self.scaler, scaler_path)
         print(f"✓ Scaler saved to {scaler_path}")
-        
+
+        encoder_path = os.path.join(MODELS_DIR, 'label_encoder.pkl')
+        joblib.dump(self.label_encoder, encoder_path)
+        print(f"✓ Label encoder saved to {encoder_path}")
+
         print(f"\n✅ Data preparation complete!")
     
     def train_random_forest(self):
@@ -269,8 +286,7 @@ class MLTrainingPipeline:
             max_depth=6,
             learning_rate=0.1,
             random_state=RANDOM_STATE,
-            use_label_encoder=False,
-            eval_metric='logloss',
+            eval_metric='mlogloss',
             verbosity=0
         )
         
@@ -295,47 +311,43 @@ class MLTrainingPipeline:
         return xgb_model
     
     def _evaluate_model(self, model, model_name, training_time):
-        """Evaluate model performance."""
+        """Evaluate model performance (multi-class)."""
         print(f"\n📊 Evaluating {model_name}...")
-        
+
         # Make predictions
         y_pred = model.predict(self.X_test)
-        
-        # Calculate metrics
+
+        # Calculate metrics (weighted average for multi-class)
         accuracy = accuracy_score(self.y_test, y_pred)
-        precision = precision_score(self.y_test, y_pred)
-        recall = recall_score(self.y_test, y_pred)
-        f1 = f1_score(self.y_test, y_pred)
-        
-        # Get probabilities for ROC AUC
-        if hasattr(model, 'predict_proba'):
-            y_proba = model.predict_proba(self.X_test)[:, 1]
-            roc_auc = roc_auc_score(self.y_test, y_proba)
-        else:
-            y_proba = None
-            roc_auc = None
-        
+        precision = precision_score(self.y_test, y_pred, average='weighted', zero_division=0)
+        recall = recall_score(self.y_test, y_pred, average='weighted', zero_division=0)
+        f1 = f1_score(self.y_test, y_pred, average='weighted', zero_division=0)
+
         # Confusion matrix
         cm = confusion_matrix(self.y_test, y_pred)
-        
+
         # Print results
         print(f"\n🎯 Performance Metrics:")
         print(f"   Accuracy:  {accuracy * 100:.2f}%")
         print(f"   Precision: {precision * 100:.2f}%")
         print(f"   Recall:    {recall * 100:.2f}%")
         print(f"   F1-Score:  {f1 * 100:.2f}%")
-        if roc_auc:
-            print(f"   ROC AUC:   {roc_auc:.4f}")
-        
-        print(f"\n📉 Confusion Matrix:")
-        print(f"   TN: {cm[0][0]:4d}  |  FP: {cm[0][1]:4d}")
-        print(f"   FN: {cm[1][0]:4d}  |  TP: {cm[1][1]:4d}")
-        
+
+        # Per-class report
+        if self.label_encoder is not None:
+            class_names = list(self.label_encoder.classes_)
+            print(f"\n📋 Classification Report:")
+            print(classification_report(self.y_test, y_pred,
+                                        target_names=class_names, zero_division=0))
+        else:
+            print(f"\n📋 Classification Report:")
+            print(classification_report(self.y_test, y_pred, zero_division=0))
+
         # Cross-validation
         print(f"\n🔄 Cross-validation ({CV_FOLDS} folds)...")
         cv_scores = cross_val_score(model, self.X_train, self.y_train, cv=CV_FOLDS, n_jobs=-1)
         print(f"   CV Accuracy: {cv_scores.mean() * 100:.2f}% (+/- {cv_scores.std() * 100:.2f}%)")
-        
+
         # Prepare results dictionary
         results = {
             'model_name': model_name,
@@ -343,7 +355,6 @@ class MLTrainingPipeline:
             'precision': float(precision),
             'recall': float(recall),
             'f1_score': float(f1),
-            'roc_auc': float(roc_auc) if roc_auc else None,
             'training_time': float(training_time),
             'cv_mean': float(cv_scores.mean()),
             'cv_std': float(cv_scores.std()),
@@ -351,7 +362,7 @@ class MLTrainingPipeline:
             'test_samples': len(self.y_test),
             'timestamp': datetime.now().isoformat()
         }
-        
+
         return results
     
     def compare_models(self):

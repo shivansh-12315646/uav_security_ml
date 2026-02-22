@@ -18,6 +18,7 @@ class MLService:
         """Initialize ML service."""
         self.models = {}
         self.scaler = None
+        self.label_encoder = None
         self.active_model_name = None
         self._app = None
     
@@ -46,6 +47,17 @@ class MLService:
                 if os.path.exists(scaler_path):
                     self.scaler = joblib.load(scaler_path)
                     logger.info(f"Scaler loaded from {scaler_path}")
+                    break
+
+            # Try loading label encoder
+            encoder_paths = [
+                os.path.join(base_path, 'ml_models', 'label_encoder.pkl'),
+                os.path.join(base_path, 'label_encoder.pkl')
+            ]
+            for encoder_path in encoder_paths:
+                if os.path.exists(encoder_path):
+                    self.label_encoder = joblib.load(encoder_path)
+                    logger.info(f"Label encoder loaded from {encoder_path}")
                     break
             
             # Load models from new ml_models directory
@@ -121,24 +133,60 @@ class MLService:
         
         # Get probability/confidence if available
         confidence = 0.5  # Default confidence
+        probabilities_dict = {}
         if hasattr(model, 'predict_proba'):
             probabilities = model.predict_proba(features_scaled)[0]
             confidence = float(max(probabilities))
+            # Build per-class probability dict
+            if self.label_encoder is not None:
+                class_names = list(self.label_encoder.classes_)
+            else:
+                class_names = [str(i) for i in range(len(probabilities))]
+            probabilities_dict = {
+                name: float(prob) for name, prob in zip(class_names, probabilities)
+            }
         elif hasattr(model, 'decision_function'):
             decision = model.decision_function(features_scaled)[0]
             # Convert decision function to probability-like score
             confidence = float(1 / (1 + np.exp(-decision)))
         
-        # Map prediction to readable format
-        prediction_label = 'Threat' if prediction == 'attack' or prediction == 1 else 'Normal'
+        # Decode prediction to human-readable label
+        if self.label_encoder is not None:
+            prediction_label = self.label_encoder.inverse_transform([prediction])[0]
+        else:
+            # Fallback class names
+            class_names_fallback = [
+                'normal', 'jamming_attack', 'gps_spoofing',
+                'unauthorized_access', 'signal_interference', 'physical_tampering'
+            ]
+            prediction_label = (class_names_fallback[prediction]
+                                if prediction < len(class_names_fallback) else 'unknown')
+        
+        # Normalise label to title-case display name
+        display_label = self._normalise_label(prediction_label)
+        threat_category = 'normal' if display_label == 'Normal' else 'attack'
         
         return {
-            'prediction': prediction_label,
+            'prediction': display_label,
+            'threat_category': threat_category,
             'confidence': confidence,
             'model_used': model_name,
-            'raw_prediction': str(prediction)
+            'raw_prediction': int(prediction),
+            'all_probabilities': probabilities_dict
         }
     
+    def _normalise_label(self, raw_label):
+        """Convert raw dataset label to display-friendly name."""
+        label_map = {
+            'normal': 'Normal',
+            'jamming_attack': 'Jamming Attack',
+            'gps_spoofing': 'GPS Spoofing',
+            'unauthorized_access': 'Unauthorized Access',
+            'signal_interference': 'Signal Interference',
+            'physical_tampering': 'Physical Tampering',
+        }
+        return label_map.get(str(raw_label).lower(), str(raw_label).replace('_', ' ').title())
+
     def get_feature_importance(self, model_name=None):
         """
         Get feature importance for tree-based models.
@@ -192,23 +240,40 @@ class MLService:
         Calculate threat level based on prediction and confidence.
         
         Args:
-            prediction: Prediction label ('Normal' or 'Threat')
+            prediction: Prediction label (e.g. 'Normal', 'Jamming Attack', etc.)
             confidence: Confidence score (0-1)
         
         Returns:
             str: Threat level ('Low', 'Medium', 'High', 'Critical')
         """
-        if prediction == 'Normal':
+        # Normalise to lowercase underscore key for robust lookup
+        lookup_key = str(prediction).lower().replace(' ', '_')
+
+        # Map raw label keys to base threat levels
+        base_level_map = {
+            'normal': 'Low',
+            'signal_interference': 'Medium',
+            'jamming_attack': 'High',
+            'gps_spoofing': 'Critical',
+            'unauthorized_access': 'Critical',
+            'physical_tampering': 'Critical',
+        }
+
+        base = base_level_map.get(lookup_key)
+        if base is None:
+            # Unknown attack type - use confidence-based level
+            base = 'High'
+
+        # For fixed levels, return directly
+        if base == 'Low':
             return 'Low'
-        
-        if confidence >= 0.9:
+        if base == 'Critical':
             return 'Critical'
-        elif confidence >= 0.75:
-            return 'High'
-        elif confidence >= 0.6:
-            return 'Medium'
-        else:
-            return 'Low'
+        # Medium / High: refine by confidence
+        if base == 'High':
+            return 'Critical' if confidence >= 0.9 else 'High'
+        # Medium
+        return 'High' if confidence >= 0.8 else 'Medium'
 
 
 # Global ML service instance

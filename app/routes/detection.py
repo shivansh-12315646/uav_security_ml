@@ -65,7 +65,7 @@ def detect():
             db.session.commit()
             
             # Create alert if threat detected and high confidence
-            if result['prediction'] == 'Threat' and result['confidence'] >= 0.6:
+            if result['threat_category'] == 'attack' and result['confidence'] >= 0.6:
                 alert = Alert(
                     detection_id=detection.id,
                     severity=threat_level
@@ -94,7 +94,7 @@ def detect():
             }
             
             flash(f'Detection completed: {result["prediction"]} (Confidence: {result["confidence"]:.2%})', 
-                  'success' if result['prediction'] == 'Normal' else 'warning')
+                  'success' if result['threat_category'] == 'normal' else 'warning')
                   
         except Exception as e:
             flash(f'Error during detection: {str(e)}', 'danger')

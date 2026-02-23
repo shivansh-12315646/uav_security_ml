@@ -101,6 +101,9 @@ CRISPY_TEMPLATE_PACK = 'bootstrap5'
 
 ML_MODELS_DIR = BASE_DIR / 'ml_models'
 
+# Allows {% if debug %} in templates when accessing from local IPs
+INTERNAL_IPS = ['127.0.0.1', '::1', 'localhost']
+
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
 # Production security settings (applied when DEBUG=False)

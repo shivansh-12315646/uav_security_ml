@@ -28,12 +28,8 @@ ENV/
 env.bak/
 venv.bak/
 
-# Flask
-instance/
-.webassets-cache
-flask_session/
-
-# Database
+# Django
+staticfiles/
 *.db
 *.sqlite
 *.sqlite3
@@ -63,16 +59,13 @@ uploads/*
 exports/*
 !exports/.gitkeep
 
-# ML Models (keep structure, ignore large files)
+# ML Models (keep structure, ignore large pkl files)
 ml_models/saved_models/*.pkl
 ml_models/saved_models/*.h5
 ml_models/saved_models/*.joblib
 !ml_models/saved_models/.gitkeep
 
 # Generated dataset and model files (users should generate these)
-uav_data.csv
-model/uav_security_model.pkl
-scaler.pkl
 data/*.csv
 ml_models/*.pkl
 ml_models/*.joblib
@@ -83,14 +76,7 @@ ml_models/*.joblib
 htmlcov/
 .tox/
 
-# Celery
-celerybeat-schedule
-celerybeat.pid
-
-# Redis
-dump.rdb
-
-# Node (if using npm for frontend assets)
+# Node
 node_modules/
 package-lock.json
 
@@ -103,10 +89,6 @@ package-lock.json
 *.bak
 *.swp
 tmp/
-
-# Build output
-build/
-.netlify/
 
 # Docker
 .dockerignore

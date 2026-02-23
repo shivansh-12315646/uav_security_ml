@@ -1,6 +1,0 @@
-# Minimal requirements for Netlify static build
-# This file is used only for building the static site
-# Full requirements.txt is needed for the Flask application deployment
-
-# No dependencies needed for static site generation
-# The build_static.py script uses only Python standard library

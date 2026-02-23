@@ -19,73 +19,31 @@ services:
       timeout: 5s
       retries: 5
 
-  # Redis for caching and sessions
-  redis:
-    image: redis:7-alpine
-    container_name: uav_redis
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Flask Application
+  # Django Application
   web:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     container_name: uav_web
     depends_on:
       db:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     environment:
-      - FLASK_ENV=production
-      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-me}
+      - DJANGO_SETTINGS_MODULE=uav_project.settings
+      - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY:-django-insecure-dev-key-change-in-production}
       - DATABASE_URL=postgresql://uav_user:${DB_PASSWORD:-changeme}@db:5432/uav_security
-      - REDIS_URL=redis://redis:6379/0
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-jwt-secret-key}
+      - ALLOWED_HOSTS=localhost 127.0.0.1 0.0.0.0
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@uavsecurity.com}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
     ports:
-      - "5000:5000"
+      - "8000:8000"
     volumes:
       - ./uploads:/app/uploads
-      - ./exports:/app/exports
       - ./ml_models:/app/ml_models
       - ./data:/app/data
-      - ./logs:/app/logs
-    restart: unless-stopped
-
-  # Celery Worker (optional - for background tasks)
-  celery_worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: uav_celery_worker
-    command: celery -A app.celery worker --loglevel=info
-    depends_on:
-      - db
-      - redis
-    environment:
-      - FLASK_ENV=production
-      - DATABASE_URL=postgresql://uav_user:${DB_PASSWORD:-changeme}@db:5432/uav_security
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/1
-      - CELERY_RESULT_BACKEND=redis://redis:6379/1
-    volumes:
-      - ./uploads:/app/uploads
-      - ./exports:/app/exports
-      - ./ml_models:/app/ml_models
     restart: unless-stopped
 
 volumes:
   postgres_data:
-  redis_data:

@@ -51,32 +51,33 @@ NORMAL_RANGES = {
 # Attack signatures - how attacks affect metrics
 ATTACK_SIGNATURES = {
     'jamming_attack': {
-        'signal_strength': (0, 30),  # Very weak signal
-        'gps_accuracy': (0, 40),  # Poor GPS
-        'vibration': (5, 10),  # High vibration from distress
+        'signal_strength': (0, 25),   # Very weak signal
+        'gps_accuracy': (0, 30),      # Very poor GPS
+        'vibration': (6, 10),         # High vibration (drone distress)
+        'speed': (5, 30),             # Slow/erratic movement
     },
     'gps_spoofing': {
-        'gps_accuracy': (10, 50),  # Inconsistent GPS
-        'altitude': (0, 600),  # Abnormal altitude readings
-        'speed': (0, 150),  # Erratic speed
-        'direction': (0, 360),  # Rapid direction changes
+        'gps_accuracy': (5, 40),      # Wildly inaccurate GPS
+        'altitude': (0, 600),         # Impossible altitude readings
+        'direction': (0, 360),        # Rapid direction changes
+        'distance_from_base': (0, 15000),  # False location data
     },
     'unauthorized_access': {
-        'signal_strength': (40, 70),  # Moderate signal (hijacked)
-        'direction': (0, 360),  # Unexpected direction
-        'speed': (0, 120),  # Unusual speed patterns
-        'flight_time': (0, 600),  # Short, suspicious sessions
+        'signal_strength': (40, 70),  # Moderate signal (hijacked channel)
+        'direction': (0, 360),        # Unexpected direction changes
+        'speed': (80, 120),           # Unusual high speed
+        'flight_time': (0, 300),      # Short suspicious sessions
     },
     'signal_interference': {
         'signal_strength': (20, 50),  # Weak, fluctuating signal
-        'gps_accuracy': (40, 70),  # Degraded GPS
-        'vibration': (3, 7),  # Moderate vibration
+        'gps_accuracy': (40, 70),     # Degraded GPS
+        'vibration': (3, 7),          # Moderate vibration
     },
     'physical_tampering': {
-        'vibration': (7, 10),  # Very high vibration
-        'temperature': (40, 60),  # Overheating
-        'battery_level': (0, 40),  # Rapid battery drain
-        'altitude': (0, 100),  # Low altitude (grounded/crashed)
+        'vibration': (7, 10),         # Very high vibration
+        'temperature': (40, 60),      # Overheating
+        'battery_level': (0, 30),     # Rapid battery drain
+        'altitude': (0, 80),          # Low altitude (grounded/crashed)
     }
 }
 

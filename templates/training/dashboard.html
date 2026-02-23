@@ -1,0 +1,708 @@
+{% extends "base.html" %}
+
+{% block title %}Model Training Dashboard - UAV Security ML{% endblock %}
+
+{% block extra_css %}
+<style>
+    .training-container {
+        padding: 2rem 0;
+    }
+    
+    .training-card {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 1rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    
+    .training-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .training-title {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .progress-section {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .progress-bar-custom {
+        height: 30px;
+        border-radius: 15px;
+        background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
+        transition: width 0.5s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .progress-bar-custom::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        animation: shimmer 2s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+    
+    .metric-card {
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #3b82f6;
+        margin-bottom: 0.5rem;
+    }
+    
+    .metric-label {
+        font-size: 0.875rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .algorithm-selector {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .algorithm-btn {
+        background: rgba(59, 130, 246, 0.1);
+        border: 2px solid rgba(59, 130, 246, 0.3);
+        border-radius: 0.75rem;
+        padding: 1.5rem 1rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: #cbd5e1;
+    }
+    
+    .algorithm-btn:hover {
+        background: rgba(59, 130, 246, 0.2);
+        border-color: #3b82f6;
+        transform: translateY(-3px);
+    }
+    
+    .algorithm-btn.active {
+        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+        border-color: #8b5cf6;
+        color: white;
+        font-weight: 600;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .status-training {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        animation: pulse 2s infinite;
+    }
+    
+    .status-complete {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+    
+    .status-error {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+    
+    .upload-zone {
+        border: 2px dashed rgba(59, 130, 246, 0.5);
+        border-radius: 0.75rem;
+        padding: 3rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: rgba(59, 130, 246, 0.05);
+    }
+    
+    .upload-zone:hover {
+        border-color: #3b82f6;
+        background: rgba(59, 130, 246, 0.1);
+    }
+    
+    .upload-zone.drag-over {
+        border-color: #8b5cf6;
+        background: rgba(139, 92, 246, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container training-container">
+    <!-- Header -->
+    <div class="training-header" data-aos="fade-down">
+        <div>
+            <h1 class="training-title">🤖 Model Training Dashboard</h1>
+            <p class="text-muted">Train and manage ML models with real-time monitoring</p>
+        </div>
+        <div>
+            <a href="{% url 'compare_models_page' %}" class="btn btn-outline-primary">
+                <i class="fas fa-chart-line"></i> Compare Models
+            </a>
+            <a href="{% url 'dataset_analyzer' %}" class="btn btn-outline-info">
+                <i class="fas fa-database"></i> Analyze Dataset
+            </a>
+        </div>
+    </div>
+    
+    <!-- Training Form -->
+    <div class="training-card" data-aos="fade-up">
+        <h3 class="mb-4">
+            <i class="fas fa-brain"></i> Start New Training
+        </h3>
+        
+        <!-- Dataset Upload -->
+        <div class="upload-zone mb-4" id="uploadZone">
+            <i class="fas fa-cloud-upload-alt fa-3x mb-3" style="color: #3b82f6;"></i>
+            <h5>Upload Training Dataset</h5>
+            <p class="text-muted">Drag & drop your CSV file here or click to browse</p>
+            <input type="file" id="datasetFile" accept=".csv" class="d-none">
+        </div>
+        
+        <div id="datasetInfo" class="alert alert-info d-none">
+            <h6>Dataset Information:</h6>
+            <div id="datasetStats"></div>
+        </div>
+        
+        <!-- Algorithm Selection -->
+        <h5 class="mb-3">Select Algorithm</h5>
+        <div class="algorithm-selector mb-4">
+            {% for algo in algorithms %}
+            <div class="algorithm-btn" data-algorithm="{{ algo }}">
+                <i class="fas fa-brain mb-2" style="font-size: 1.5rem;"></i>
+                <div>{{ algo }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Training Parameters -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <label class="form-label">Test Split (%)</label>
+                <input type="number" id="testSplit" class="form-control" value="20" min="10" max="40" step="5">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Random Seed</label>
+                <input type="number" id="randomSeed" class="form-control" value="42">
+            </div>
+        </div>
+        
+        <!-- Start Training Button -->
+        <button id="startTrainingBtn" class="btn btn-lg btn-primary w-100" disabled>
+            <i class="fas fa-play"></i> Start Training
+        </button>
+    </div>
+    
+    <!-- Training Progress -->
+    <div id="trainingProgress" class="training-card d-none" data-aos="fade-up">
+        <h3 class="mb-4">
+            <span id="trainingStatus" class="status-badge status-training">Training in Progress</span>
+        </h3>
+        
+        <div class="progress-section">
+            <div class="d-flex justify-content-between mb-2">
+                <span id="progressLabel">Initializing...</span>
+                <span id="progressPercent">0%</span>
+            </div>
+            <div class="progress" style="height: 30px;">
+                <div id="progressBar" class="progress-bar-custom" role="progressbar" style="width: 0%"></div>
+            </div>
+        </div>
+        
+        <!-- Real-time Metrics -->
+        <div class="metrics-grid" id="metricsGrid"></div>
+        
+        <!-- Training Log -->
+        <div class="mt-4">
+            <h5>Training Log</h5>
+            <div id="trainingLog" style="background: rgba(0,0,0,0.3); border-radius: 0.5rem; padding: 1rem; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.875rem;">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Trained Models -->
+    <div class="training-card" data-aos="fade-up">
+        <h3 class="mb-4">
+            <i class="fas fa-history"></i> Trained Models
+        </h3>
+        
+        <div class="table-responsive">
+            <table class="table table-dark table-hover">
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Accuracy</th>
+                        <th>Precision</th>
+                        <th>Recall</th>
+                        <th>F1 Score</th>
+                        <th>Trained</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="modelsTableBody">
+                    {% if models %}
+                        {% for model in models %}
+                        <tr>
+                            <td><strong>{{ model.name }}</strong> v{{ model.version }}</td>
+                            <td>{% if model.accuracy %}{{ model.accuracy|floatformat:4 }}{% else %}N/A{% endif %}</td>
+                            <td>{% if model.precision %}{{ model.precision|floatformat:4 }}{% else %}N/A{% endif %}</td>
+                            <td>{% if model.recall %}{{ model.recall|floatformat:4 }}{% else %}N/A{% endif %}</td>
+                            <td>{% if model.f1_score %}{{ model.f1_score|floatformat:4 }}{% else %}N/A{% endif %}</td>
+                            <td>{{ model.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                {% if model.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if not model.is_active %}
+                                <button class="btn btn-sm btn-success" onclick="activateModel({{ model.id }})">
+                                    <i class="fas fa-check"></i> Activate
+                                </button>
+                                {% endif %}
+                                <button class="btn btn-sm btn-danger" onclick="deleteModel({{ model.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">No trained models yet. Start training your first model!</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+<script>
+    let selectedAlgorithm = null;
+    let uploadedDatasetPath = null;
+    let socket = null;
+    
+    // Initialize Socket.IO for real-time updates
+    function initSocket() {
+        socket = io('/training');
+        
+        socket.on('connect', () => {
+            console.log('Connected to training namespace');
+        });
+        
+        socket.on('training_started', (data) => {
+            console.log('Training started:', data);
+            showTrainingProgress();
+        });
+        
+        socket.on('training_update', (data) => {
+            updateProgress(data);
+            addLog(data.message);
+        });
+        
+        socket.on('training_complete', (data) => {
+            completeTraining(data);
+        });
+        
+        socket.on('training_error', (data) => {
+            showError(data.error);
+        });
+    }
+    
+    // Algorithm selection
+    document.querySelectorAll('.algorithm-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.algorithm-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            selectedAlgorithm = this.dataset.algorithm;
+            checkFormReady();
+        });
+    });
+    
+    // File upload
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('datasetFile');
+    
+    uploadZone.addEventListener('click', () => fileInput.click());
+    
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('drag-over');
+    });
+    
+    uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('drag-over');
+    });
+    
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('drag-over');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFile(files[0]);
+        }
+    });
+    
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFile(e.target.files[0]);
+        }
+    });
+    
+    function handleFile(file) {
+        if (!file.name.endsWith('.csv')) {
+            Toastify({
+                text: 'Please upload a CSV file',
+                backgroundColor: '#ef4444',
+                duration: 3000
+            }).showToast();
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('dataset', file);
+        
+        fetch('/training/upload-dataset', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                uploadedDatasetPath = data.filepath;
+                showDatasetInfo(data);
+                checkFormReady();
+                
+                Toastify({
+                    text: 'Dataset uploaded successfully!',
+                    backgroundColor: '#10b981',
+                    duration: 3000
+                }).showToast();
+            } else {
+                throw new Error(data.error);
+            }
+        })
+        .catch(error => {
+            Toastify({
+                text: 'Error: ' + error.message,
+                backgroundColor: '#ef4444',
+                duration: 3000
+            }).showToast();
+        });
+    }
+    
+    function showDatasetInfo(data) {
+        const infoDiv = document.getElementById('datasetInfo');
+        const statsDiv = document.getElementById('datasetStats');
+        
+        statsDiv.innerHTML = `
+            <div class="row">
+                <div class="col-md-3"><strong>Total Samples:</strong> ${data.total_samples}</div>
+                <div class="col-md-3"><strong>Normal:</strong> ${data.normal_samples}</div>
+                <div class="col-md-3"><strong>Attack:</strong> ${data.attack_samples}</div>
+                <div class="col-md-3"><strong>Features:</strong> ${data.features}</div>
+            </div>
+        `;
+        
+        infoDiv.classList.remove('d-none');
+    }
+    
+    function checkFormReady() {
+        const btn = document.getElementById('startTrainingBtn');
+        btn.disabled = !(selectedAlgorithm && uploadedDatasetPath);
+    }
+    
+    // Start training
+    document.getElementById('startTrainingBtn').addEventListener('click', function() {
+        const testSplit = parseFloat(document.getElementById('testSplit').value) / 100;
+        
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting Training...';
+        
+        fetch('/training/start-training', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                algorithm: selectedAlgorithm,
+                dataset_path: uploadedDatasetPath,
+                test_size: testSplit
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Toastify({
+                    text: 'Training started successfully!',
+                    backgroundColor: '#10b981',
+                    duration: 3000
+                }).showToast();
+            } else {
+                throw new Error(data.error);
+            }
+        })
+        .catch(error => {
+            Toastify({
+                text: 'Error: ' + error.message,
+                backgroundColor: '#ef4444',
+                duration: 3000
+            }).showToast();
+            
+            this.disabled = false;
+            this.innerHTML = '<i class="fas fa-play"></i> Start Training';
+        });
+    });
+    
+    function showTrainingProgress() {
+        document.getElementById('trainingProgress').classList.remove('d-none');
+    }
+    
+    function updateProgress(data) {
+        document.getElementById('progressLabel').textContent = data.message;
+        document.getElementById('progressPercent').textContent = data.progress + '%';
+        document.getElementById('progressBar').style.width = data.progress + '%';
+    }
+    
+    function addLog(message) {
+        const log = document.getElementById('trainingLog');
+        const timestamp = new Date().toLocaleTimeString();
+        log.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+        log.scrollTop = log.scrollHeight;
+    }
+    
+    function completeTraining(data) {
+        document.getElementById('trainingStatus').className = 'status-badge status-complete';
+        document.getElementById('trainingStatus').textContent = 'Training Complete';
+        
+        // Show metrics
+        const metricsGrid = document.getElementById('metricsGrid');
+        metricsGrid.innerHTML = `
+            <div class="metric-card">
+                <div class="metric-value">${(data.metrics.accuracy * 100).toFixed(2)}%</div>
+                <div class="metric-label">Accuracy</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">${(data.metrics.precision * 100).toFixed(2)}%</div>
+                <div class="metric-label">Precision</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">${(data.metrics.recall * 100).toFixed(2)}%</div>
+                <div class="metric-label">Recall</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">${(data.metrics.f1_score * 100).toFixed(2)}%</div>
+                <div class="metric-label">F1 Score</div>
+            </div>
+        `;
+        
+        addLog('Training completed successfully!');
+        
+        Toastify({
+            text: 'Model trained successfully!',
+            backgroundColor: '#10b981',
+            duration: 5000
+        }).showToast();
+        
+        // Refresh models table without full page reload
+        setTimeout(() => {
+            fetch('/training/models')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateModelsTable(data.models);
+                    } else {
+                        location.reload(); // Fallback to full reload
+                    }
+                })
+                .catch(() => location.reload());
+        }, 2000);
+    }
+    
+    function updateModelsTable(models) {
+        const tbody = document.getElementById('modelsTableBody');
+        if (!tbody) {
+            location.reload();
+            return;
+        }
+        
+        let html = '';
+        if (models.length > 0) {
+            models.forEach(model => {
+                html += `
+                    <tr>
+                        <td><strong>${model.name}</strong> v${model.version}</td>
+                        <td>${model.accuracy ? (model.accuracy * 100).toFixed(2) + '%' : 'N/A'}</td>
+                        <td>${model.precision ? (model.precision * 100).toFixed(2) + '%' : 'N/A'}</td>
+                        <td>${model.recall ? (model.recall * 100).toFixed(2) + '%' : 'N/A'}</td>
+                        <td>${model.f1_score ? model.f1_score.toFixed(4) : 'N/A'}</td>
+                        <td>${new Date(model.created_at).toLocaleString()}</td>
+                        <td>
+                            ${model.is_active ? 
+                                '<span class="badge bg-success">Active</span>' : 
+                                '<span class="badge bg-secondary">Inactive</span>'
+                            }
+                        </td>
+                        <td>
+                            ${!model.is_active ? 
+                                `<button class="btn btn-sm btn-success" onclick="activateModel(${model.id})">
+                                    <i class="fas fa-check"></i> Activate
+                                </button>` : ''
+                            }
+                            <button class="btn btn-sm btn-danger" onclick="deleteModel(${model.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        } else {
+            html = `<tr><td colspan="8" class="text-center text-muted">No trained models yet. Start training your first model!</td></tr>`;
+        }
+        
+        tbody.innerHTML = html;
+    }
+    
+    function showError(error) {
+        document.getElementById('trainingStatus').className = 'status-badge status-error';
+        document.getElementById('trainingStatus').textContent = 'Training Failed';
+        addLog('ERROR: ' + error);
+        
+        Toastify({
+            text: 'Training failed: ' + error,
+            backgroundColor: '#ef4444',
+            duration: 5000
+        }).showToast();
+        
+        document.getElementById('startTrainingBtn').disabled = false;
+        document.getElementById('startTrainingBtn').innerHTML = '<i class="fas fa-play"></i> Start Training';
+    }
+    
+    // Model actions
+    function activateModel(modelId) {
+        if (!confirm('Activate this model for predictions?')) return;
+        
+        fetch(`/training/models/${modelId}/activate`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Toastify({
+                    text: 'Model activated successfully!',
+                    backgroundColor: '#10b981',
+                    duration: 3000
+                }).showToast();
+                location.reload();
+            } else {
+                throw new Error(data.error);
+            }
+        })
+        .catch(error => {
+            Toastify({
+                text: 'Error: ' + error.message,
+                backgroundColor: '#ef4444',
+                duration: 3000
+            }).showToast();
+        });
+    }
+    
+    function deleteModel(modelId) {
+        if (!confirm('Are you sure you want to delete this model?')) return;
+        
+        fetch(`/training/models/${modelId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Toastify({
+                    text: 'Model deleted successfully!',
+                    backgroundColor: '#10b981',
+                    duration: 3000
+                }).showToast();
+                location.reload();
+            } else {
+                throw new Error(data.error);
+            }
+        })
+        .catch(error => {
+            Toastify({
+                text: 'Error: ' + error.message,
+                backgroundColor: '#ef4444',
+                duration: 3000
+            }).showToast();
+        });
+    }
+    
+    // Initialize Socket.IO on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        initSocket();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% comment %}
+  Threat Card Component
+  Usage: {% include 'components/threat_card.html' with context %}
+  Required variables: detection (detection object)
+{% endcomment %}
+<div class="card {% if detection.prediction == 'Normal' %}border-success{% else %}border-danger{% endif %} mb-3" data-aos="fade-up">
+    <div class="card-header {% if detection.prediction == 'Normal' %}bg-success{% else %}bg-danger{% endif %} bg-opacity-10">
+        <h6 class="mb-0">
+            <i class="fas {% if detection.prediction == 'Normal' %}fa-check-circle{% else %}fa-exclamation-triangle{% endif %}"></i>
+            {{ detection.prediction }}
+        </h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p class="mb-1"><strong>Confidence:</strong></p>
+                <div class="confidence-meter mb-3">
+                    <div class="confidence-meter-fill" style="width: {% widthratio detection.confidence 1 100 %}%"></div>
+                </div>
+                <p class="text-center mb-0">{% widthratio detection.confidence 1 100 %}%</p>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <th>Threat Level:</th>
+                        <td>
+                            
+                            {% include "components/alert_badge.html" with severity=detection.threat_level %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Model:</th>
+                        <td>{{ detection.model_version|default:"N/A" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Detection ID:</th>
+                        <td>#{{ detection.id }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

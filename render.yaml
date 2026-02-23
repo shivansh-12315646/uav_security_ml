@@ -24,7 +24,3 @@ services:
         value: "3.11"
       - key: SECURE_SSL_REDIRECT
         value: "False"
-    disk:
-      name: uav-data
-      mountPath: /opt/render/project/src/ml_models
-      sizeGB: 1

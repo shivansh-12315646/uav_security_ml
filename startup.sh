@@ -1,7 +1,6 @@
 #!/bin/bash
 # UAV Security ML - Startup Script
 # Handles: migrations, admin creation, ML model training (first run), server start
-set -e
 
 echo "=== UAV Security ML Startup ==="
 
@@ -14,10 +13,11 @@ python manage.py create_admin
 echo "[3/4] Checking ML models..."
 if [ ! -f ml_models/random_forest.pkl ]; then
     echo "  No trained models found. Generating dataset and training models..."
-    echo "  This may take 2-5 minutes on first run..."
-    python scripts/generate_dataset.py
-    python scripts/train_models.py
-    echo "  Models trained successfully!"
+    echo "  This may take a few minutes on first run..."
+    python scripts/generate_dataset.py && \
+    python scripts/train_models.py && \
+    echo "  Models trained successfully!" || \
+    echo "  Warning: model training failed, continuing without pre-trained models."
 else
     echo "  Models already exist, skipping training."
 fi

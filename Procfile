@@ -1,2 +1,2 @@
-web: gunicorn uav_project.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
-release: python manage.py migrate --noinput && python manage.py create_admin && python manage.py collectstatic --noinput
+web: bash startup.sh
+release: python manage.py collectstatic --noinput

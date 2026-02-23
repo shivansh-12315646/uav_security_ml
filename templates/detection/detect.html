@@ -624,32 +624,35 @@ function fillSampleData(type) {
             showToast('✅ Normal flight pattern loaded', 'success');
             
         } else if (type === 'gps_spoofing') {
-            // GPS Spoofing attack
+            // GPS Spoofing attack - matches training data signature:
+            // gps_accuracy: 5-40, altitude: 0-600, distance_from_base: 0-15000
+            // Other features remain in normal ranges
             document.getElementById('altitude').value = 550;
-            document.getElementById('speed').value = 120;
+            document.getElementById('speed').value = 45;
             document.getElementById('direction').value = 275;
-            document.getElementById('signal_strength').value = 60;
-            document. getElementById('distance_from_base').value = 3500;
-            document.getElementById('flight_time').value = 900;
-            document.getElementById('battery_level').value = 65;
-            document. getElementById('temperature').value = 30;
-            document.getElementById('vibration').value = 4.5;
-            document.getElementById('gps_accuracy').value = 25;
+            document.getElementById('signal_strength').value = 85;
+            document.getElementById('distance_from_base').value = 8000;
+            document.getElementById('flight_time').value = 1800;
+            document.getElementById('battery_level').value = 75;
+            document.getElementById('temperature').value = 25;
+            document.getElementById('vibration').value = 1.5;
+            document.getElementById('gps_accuracy').value = 15;
             
             showToast('⚠️ GPS Spoofing attack pattern loaded', 'warning');
             
         } else if (type === 'jamming') {
-            // Jamming attack
+            // Jamming attack - matches training data signature:
+            // signal_strength: 0-25, gps_accuracy: 0-30, vibration: 6-10, speed: 5-30
             document.getElementById('altitude').value = 180;
-            document.getElementById('speed').value = 40;
-            document. getElementById('direction').value = 90;
+            document.getElementById('speed').value = 20;
+            document.getElementById('direction').value = 90;
             document.getElementById('signal_strength').value = 15;
             document.getElementById('distance_from_base').value = 2000;
             document.getElementById('flight_time').value = 1200;
             document.getElementById('battery_level').value = 70;
             document.getElementById('temperature').value = 28;
-            document.getElementById('vibration').value = 6.5;
-            document.getElementById('gps_accuracy').value = 35;
+            document.getElementById('vibration').value = 7.5;
+            document.getElementById('gps_accuracy').value = 20;
             
             showToast('🚨 Jamming attack pattern loaded', 'danger');
         }

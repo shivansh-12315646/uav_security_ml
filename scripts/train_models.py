@@ -407,6 +407,34 @@ class MLTrainingPipeline:
         
         return best_model
     
+    def train_fast(self):
+        """Train only fast models (RandomForest + XGBoost) for quick deployment startup."""
+        print("\n" + "=" * 70)
+        print("🚀 UAV SECURITY ML FAST TRAINING PIPELINE")
+        print("=" * 70)
+        print(f"\n📅 Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+        # Load and prepare data
+        self.load_and_prepare_data()
+
+        # Train fast models only
+        self.train_random_forest()
+
+        if HAS_XGBOOST:
+            self.train_xgboost()
+
+        # Compare models
+        best_model = self.compare_models()
+
+        print("\n" + "=" * 70)
+        print("✅ FAST TRAINING PIPELINE COMPLETE!")
+        print("=" * 70)
+        print(f"\n📁 Models saved in: {MODELS_DIR}/")
+        print(f"📊 Results saved in: {RESULTS_DIR}/")
+        print(f"\n🎉 Models are ready for deployment!")
+
+        return best_model
+
     def train_all(self):
         """Train all available models."""
         print("\n" + "=" * 70)
@@ -441,7 +469,7 @@ class MLTrainingPipeline:
 def main():
     """Main entry point."""
     pipeline = MLTrainingPipeline()
-    pipeline.train_all()
+    pipeline.train_fast()
 
 
 if __name__ == "__main__":

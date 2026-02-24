@@ -227,7 +227,7 @@ class TrainingService:
             'RandomForest': {'n_estimators': 100, 'random_state': 42, 'n_jobs': -1},
             'XGBoost': {
                 'n_estimators': 100, 'random_state': 42, 'n_jobs': -1,
-                'use_label_encoder': False, 'eval_metric': 'logloss'
+                'eval_metric': 'logloss'
             },
             'SVM': {'kernel': 'rbf', 'probability': True, 'random_state': 42},
             'NeuralNetwork': {'hidden_layer_sizes': (100, 50), 'random_state': 42, 'max_iter': 500},

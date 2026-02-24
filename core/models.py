@@ -77,11 +77,16 @@ class DetectionHistory(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='detections', db_index=True)
     timestamp = models.DateTimeField(default=timezone.now, db_index=True)
 
-    packet_size = models.FloatField()
-    inter_arrival = models.FloatField()
-    packet_rate = models.FloatField()
-    duration = models.FloatField()
-    failed_logins = models.FloatField()
+    altitude = models.FloatField()
+    speed = models.FloatField()
+    direction = models.FloatField()
+    signal_strength = models.FloatField()
+    distance_from_base = models.FloatField()
+    flight_time = models.FloatField()
+    battery_level = models.FloatField()
+    temperature = models.FloatField()
+    vibration = models.FloatField()
+    gps_accuracy = models.FloatField()
 
     prediction = models.CharField(max_length=50)
     confidence = models.FloatField()
@@ -102,11 +107,16 @@ class DetectionHistory(models.Model):
             'id': self.id,
             'user_id': self.user_id,
             'timestamp': self.timestamp.isoformat() if self.timestamp else None,
-            'packet_size': self.packet_size,
-            'inter_arrival': self.inter_arrival,
-            'packet_rate': self.packet_rate,
-            'duration': self.duration,
-            'failed_logins': self.failed_logins,
+            'altitude': self.altitude,
+            'speed': self.speed,
+            'direction': self.direction,
+            'signal_strength': self.signal_strength,
+            'distance_from_base': self.distance_from_base,
+            'flight_time': self.flight_time,
+            'battery_level': self.battery_level,
+            'temperature': self.temperature,
+            'vibration': self.vibration,
+            'gps_accuracy': self.gps_accuracy,
             'prediction': self.prediction,
             'confidence': round(self.confidence, 4),
             'threat_level': self.threat_level,

@@ -349,9 +349,9 @@
 {% endblock %}
 
 {% block extra_js %}
+{{ detection_trend|json_script:"trend-data" }}
 <script>
 // Initialize detection trend chart with enhanced styling
-{{ detection_trend|json_script:"trend-data" }}
         const trendData = JSON.parse(document.getElementById("trend-data").textContent);
 
 if (window.chartUtils && typeof window.chartUtils.createDetectionTrendChart === 'function') {

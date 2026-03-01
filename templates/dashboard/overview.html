@@ -22,6 +22,102 @@
     </div>
 </div>
 
+<!-- Active Countermeasures Panel -->
+<div class="row mb-4" data-aos="fade-up">
+    <div class="col-12">
+        <div class="card border-{% if current_fusion_threat_level >= 4 %}danger{% elif current_fusion_threat_level >= 3 %}warning{% elif current_fusion_threat_level >= 2 %}info{% else %}success{% endif %}">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-shield-virus"></i> Active Countermeasures</h5>
+                <span class="badge bg-{% if current_fusion_threat_level >= 4 %}danger{% elif current_fusion_threat_level >= 3 %}warning{% elif current_fusion_threat_level >= 2 %}info{% else %}success{% endif %} fs-6">
+                    Fusion Threat Level: {{ current_fusion_threat_level }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <!-- Threat level gauge -->
+                    <div class="col-md-3 text-center border-end">
+                        <div class="threat-level-indicator
+                            {% if current_fusion_threat_level >= 4 %}danger
+                            {% elif current_fusion_threat_level >= 3 %}warning
+                            {% elif current_fusion_threat_level >= 2 %}info
+                            {% else %}safe{% endif %}"
+                            style="display:inline-flex; width:100px; height:100px; font-size:1rem;">
+                            <div>
+                                <div style="font-size:2rem; font-weight:bold;">{{ current_fusion_threat_level }}</div>
+                                <small>/ 4</small>
+                            </div>
+                        </div>
+                        <p class="mt-2 mb-0 small">
+                            {% if current_fusion_threat_level == 0 %}Normal operation
+                            {% elif current_fusion_threat_level == 1 %}Suspicious activity
+                            {% elif current_fusion_threat_level == 2 %}Confirmed low-severity attack
+                            {% elif current_fusion_threat_level == 3 %}Confirmed high-severity attack
+                            {% else %}Critical multi-vector attack
+                            {% endif %}
+                        </p>
+                    </div>
+                    <!-- Active actions -->
+                    <div class="col-md-5">
+                        <h6 class="text-muted mb-2"><i class="fas fa-bolt"></i> Active Actions (last hour)</h6>
+                        {% if active_countermeasures %}
+                            {% for action in active_countermeasures %}
+                            <span class="badge bg-secondary me-1 mb-1">{{ action|cut:"_"|title }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="text-muted small">No active countermeasures</span>
+                        {% endif %}
+                    </div>
+                    <!-- Success rate -->
+                    <div class="col-md-4 text-center">
+                        <h6 class="text-muted mb-2"><i class="fas fa-check-double"></i> Response Success Rate</h6>
+                        <div style="font-size:2rem; font-weight:bold;" class="text-{% if response_success_rate >= 80 %}success{% elif response_success_rate >= 50 %}warning{% else %}danger{% endif %}">
+                            {{ response_success_rate }}%
+                        </div>
+                        <small class="text-muted">All-time autonomous responses</small>
+                    </div>
+                </div>
+                <!-- Recent autonomous responses -->
+                {% if recent_mitigations %}
+                <hr>
+                <h6 class="text-muted mb-2"><i class="fas fa-history"></i> Recent Autonomous Responses</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Threat Level</th>
+                                <th>Action</th>
+                                <th>Operator Notified</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for event in recent_mitigations %}
+                            <tr>
+                                <td><small>{{ event.timestamp|date:"Y-m-d H:i:s" }}</small></td>
+                                <td>
+                                    <span class="badge bg-{% if event.threat_level >= 4 %}danger{% elif event.threat_level >= 3 %}warning{% elif event.threat_level >= 2 %}info{% else %}success{% endif %}">
+                                        Level {{ event.threat_level }}
+                                    </span>
+                                </td>
+                                <td><small>{{ event.action_taken }}</small></td>
+                                <td>
+                                    {% if event.operator_notified %}
+                                    <span class="badge bg-success"><i class="fas fa-check"></i> Yes</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">No</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Enhanced Metrics Cards -->
 <div class="row mb-4">
     {% with title="Total Detections" value=total_detections icon="radar" color="info" subtext=detections_today delay=0 %}

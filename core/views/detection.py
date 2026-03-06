@@ -3,9 +3,12 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
-from core.models import DetectionHistory, Alert, AuditLog
+from django.utils import timezone
+from core.models import DetectionHistory, Alert, AuditLog, MitigationEvent
 from core.decorators import analyst_required
 from services.ml_service import ml_service
+from services.fusion_engine import fusion_engine
+from services.autonomous_response import autonomous_response
 
 
 def get_client_ip(request):
@@ -38,6 +41,37 @@ def detect(request):
             result = ml_service.predict(features)
             threat_level = ml_service.calculate_threat_level(result['prediction'], result['confidence'])
 
+            # Fusion engine: combine RF + GNSS indicators into a unified threat score.
+            # GNSS attacks are identified by matching against known attack type labels.
+            _GNSS_ATTACK_LABELS = {'gps_spoofing', 'gnss_spoofing', 'gps-spoofing', 'gnss-spoofing'}
+            is_gnss_attack = str(result['prediction']).lower().replace(' ', '_') in _GNSS_ATTACK_LABELS
+            rf_score = result['confidence'] if result['threat_category'] == 'attack' else 0.0
+            gnss_score = result['confidence'] if is_gnss_attack else 0.0
+            fusion_result = fusion_engine.calculate_combined_threat(
+                rf_score=rf_score,
+                gnss_score=gnss_score,
+                attack_type=result['prediction'],
+            )
+            fusion_threat_level = fusion_result['threat_level']
+
+            # Autonomous response: execute countermeasures when threat level >= 2
+            response_result = None
+            if fusion_threat_level >= 2:
+                response_result = autonomous_response.execute_response(
+                    threat_level=fusion_threat_level,
+                    attack_context=fusion_result,
+                )
+
+            mitigation_action = ''
+            response_success = False
+            operator_notified = False
+            response_ts = None
+            if response_result:
+                mitigation_action = response_result.get('response_summary', '')
+                response_success = response_result.get('success', False)
+                operator_notified = response_result.get('operator_notified', False)
+                response_ts = timezone.now()
+
             detection = DetectionHistory.objects.create(
                 user=request.user,
                 altitude=features[0],
@@ -55,18 +89,50 @@ def detect(request):
                 threat_level=threat_level,
                 model_version=result['model_used'],
                 ip_address=get_client_ip(request),
+                fusion_threat_level=fusion_threat_level,
+                combined_threat_score=fusion_result['combined_score'],
+                mitigation_action=mitigation_action,
+                response_timestamp=response_ts,
+                response_success=response_success,
+                operator_notified=operator_notified,
             )
 
             if result['threat_category'] == 'attack' and result['confidence'] >= 0.6:
                 Alert.objects.create(detection=detection, severity=threat_level)
 
+            # Log each mitigation action as a MitigationEvent
+            if response_result:
+                for action in response_result.get('actions_taken', []):
+                    MitigationEvent.objects.create(
+                        detection=detection,
+                        threat_level=fusion_threat_level,
+                        action_taken=action,
+                        success=response_result.get('success', False),
+                        operator_notified=response_result.get('operator_notified', False),
+                    )
+
             AuditLog.objects.create(
                 user=request.user, action='detection',
-                details=json.dumps({'prediction': result['prediction'], 'confidence': result['confidence'], 'threat_level': threat_level}),
+                details=json.dumps({
+                    'prediction': result['prediction'],
+                    'confidence': result['confidence'],
+                    'threat_level': threat_level,
+                    'fusion_threat_level': fusion_threat_level,
+                    'mitigation_action': mitigation_action,
+                }),
                 ip_address=get_client_ip(request)
             )
 
-            prediction_result = {**result, 'threat_level': threat_level, 'detection_id': detection.id}
+            prediction_result = {
+                **result,
+                'threat_level': threat_level,
+                'detection_id': detection.id,
+                'fusion_threat_level': fusion_threat_level,
+                'combined_threat_score': fusion_result['combined_score'],
+                'fusion_description': fusion_result['threat_description'],
+                'mitigation_action': mitigation_action,
+                'response_actions': response_result.get('actions_taken', []) if response_result else [],
+            }
             level = 'success' if result['threat_category'] == 'normal' else 'warning'
             messages.add_message(request, getattr(messages, level.upper()),
                 f'Detection completed: {result["prediction"]} (Confidence: {result["confidence"]:.2%})')

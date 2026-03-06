@@ -95,6 +95,14 @@ class DetectionHistory(models.Model):
     ip_address = models.CharField(max_length=50, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
 
+    # Autonomous response fields
+    fusion_threat_level = models.IntegerField(default=0)
+    combined_threat_score = models.FloatField(null=True, blank=True)
+    mitigation_action = models.CharField(max_length=200, blank=True)
+    response_timestamp = models.DateTimeField(null=True, blank=True)
+    response_success = models.BooleanField(default=False)
+    operator_notified = models.BooleanField(default=False)
+
     class Meta:
         db_table = 'detection_history'
         ordering = ['-timestamp']
@@ -123,6 +131,12 @@ class DetectionHistory(models.Model):
             'model_version': self.model_version,
             'ip_address': self.ip_address,
             'notes': self.notes,
+            'fusion_threat_level': self.fusion_threat_level,
+            'combined_threat_score': self.combined_threat_score,
+            'mitigation_action': self.mitigation_action,
+            'response_timestamp': self.response_timestamp.isoformat() if self.response_timestamp else None,
+            'response_success': self.response_success,
+            'operator_notified': self.operator_notified,
         }
 
 
@@ -268,3 +282,61 @@ class MLModel(models.Model):
 
     def __str__(self):
         return f'{self.name} v{self.version}'
+
+
+class MitigationEvent(models.Model):
+    """Tracks individual autonomous mitigation actions."""
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
+    detection = models.ForeignKey(
+        DetectionHistory, on_delete=models.CASCADE, related_name='mitigation_events'
+    )
+    threat_level = models.IntegerField()
+    action_taken = models.CharField(max_length=200)
+    success = models.BooleanField()
+    operator_notified = models.BooleanField()
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        db_table = 'mitigation_events'
+        ordering = ['-timestamp']
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None,
+            'detection_id': self.detection_id,
+            'threat_level': self.threat_level,
+            'action_taken': self.action_taken,
+            'success': self.success,
+            'operator_notified': self.operator_notified,
+            'notes': self.notes,
+        }
+
+    def __str__(self):
+        return f'MitigationEvent {self.id}: level={self.threat_level} action={self.action_taken}'
+
+
+class SecurityConfig(models.Model):
+    """Configurable thresholds and weights for the fusion + response pipeline."""
+
+    # Fusion weights (must sum to 1 after normalisation)
+    rf_weight = models.FloatField(default=0.6)
+    gnss_weight = models.FloatField(default=0.4)
+
+    # Threat score thresholds
+    suspicious_threshold = models.FloatField(default=0.3)
+    attack_threshold = models.FloatField(default=0.5)
+    high_attack_threshold = models.FloatField(default=0.7)
+    critical_threshold = models.FloatField(default=0.85)
+
+    # Response settings
+    auto_response_enabled = models.BooleanField(default=True)
+    operator_alert_enabled = models.BooleanField(default=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'security_config'
+
+    def __str__(self):
+        return f'SecurityConfig (rf={self.rf_weight}, gnss={self.gnss_weight})'

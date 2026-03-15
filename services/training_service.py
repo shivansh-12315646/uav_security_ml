@@ -145,7 +145,7 @@ class TrainingService:
             self._emit_progress('training_update', {'stage': 'evaluating', 'progress': 80, 'message': 'Evaluating model performance...'})
             y_pred = model.predict(X_test_scaled)
 
-            accuracy = accuracy_score(y_test, y_pred)
+            accuracy = accuracy_score(y_test, y_pred) * 100
             precision = precision_score(y_test, y_pred, zero_division=0)
             recall = recall_score(y_test, y_pred, zero_division=0)
             f1 = f1_score(y_test, y_pred, zero_division=0)

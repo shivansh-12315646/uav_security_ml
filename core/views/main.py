@@ -16,6 +16,20 @@ def dashboard(request):
     return redirect('dashboard_overview')
 
 
+def _compute_detection_trend(days):
+    """Return a list of {date, count} dicts for the last *days* calendar days."""
+    trend = []
+    for i in range(days - 1, -1, -1):
+        day = timezone.now() - timedelta(days=i)
+        day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
+        day_end = day_start + timedelta(days=1)
+        count = DetectionHistory.objects.filter(
+            timestamp__gte=day_start, timestamp__lt=day_end
+        ).count()
+        trend.append({'date': day_start.strftime('%Y-%m-%d'), 'count': count})
+    return trend
+
+
 @login_required
 def dashboard_overview(request):
     try:
@@ -34,13 +48,9 @@ def dashboard_overview(request):
         recent_detections = DetectionHistory.objects.select_related('user').order_by('-timestamp')[:10]
         recent_alerts = Alert.objects.order_by('-created_at')[:5]
         active_model = MLModel.objects.filter(is_active=True).first()
-        detection_trend = []
-        for i in range(6, -1, -1):
-            day = timezone.now() - timedelta(days=i)
-            day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
-            day_end = day_start + timedelta(days=1)
-            count = DetectionHistory.objects.filter(timestamp__gte=day_start, timestamp__lt=day_end).count()
-            detection_trend.append({'date': day_start.strftime('%Y-%m-%d'), 'count': count})
+        detection_trend = _compute_detection_trend(7)
+        detection_trend_30 = _compute_detection_trend(30)
+        detection_trend_90 = _compute_detection_trend(90)
 
         # Countermeasure context for dashboard
         latest_detection = DetectionHistory.objects.order_by('-timestamp').first()
@@ -63,6 +73,8 @@ def dashboard_overview(request):
         recent_detections = recent_alerts = []
         active_model = None
         detection_trend = []
+        detection_trend_30 = []
+        detection_trend_90 = []
         current_fusion_threat_level = 0
         recent_mitigations = []
         response_success_rate = 0
@@ -81,6 +93,8 @@ def dashboard_overview(request):
         'recent_alerts': recent_alerts,
         'active_model': active_model,
         'detection_trend': detection_trend,
+        'detection_trend_30': detection_trend_30,
+        'detection_trend_90': detection_trend_90,
         'current_fusion_threat_level': current_fusion_threat_level,
         'recent_mitigations': recent_mitigations,
         'response_success_rate': response_success_rate,

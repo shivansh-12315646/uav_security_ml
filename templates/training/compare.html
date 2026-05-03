@@ -7,7 +7,7 @@
     .comparison-container {
         padding: 2rem 0;
     }
-    
+
     .comparison-card {
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
         border: 1px solid rgba(59, 130, 246, 0.2);
@@ -16,14 +16,14 @@
         margin-bottom: 2rem;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     }
-    
+
     .model-selector {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
         gap: 1rem;
         margin-bottom: 2rem;
     }
-    
+
     .model-select-card {
         background: rgba(59, 130, 246, 0.1);
         border: 2px solid rgba(59, 130, 246, 0.3);
@@ -32,17 +32,17 @@
         cursor: pointer;
         transition: all 0.3s ease;
     }
-    
+
     .model-select-card:hover {
         background: rgba(59, 130, 246, 0.2);
         border-color: #3b82f6;
     }
-    
+
     .model-select-card.selected {
         background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
         border-color: #8b5cf6;
     }
-    
+
     .comparison-table {
         width: 100%;
         border-collapse: collapse;
@@ -50,7 +50,7 @@
         border-radius: 0.75rem;
         overflow: hidden;
     }
-    
+
     .comparison-table th {
         background: rgba(59, 130, 246, 0.1);
         padding: 1rem;
@@ -59,17 +59,17 @@
         font-weight: 600;
         border-bottom: 2px solid rgba(59, 130, 246, 0.3);
     }
-    
+
     .comparison-table td {
         padding: 1rem;
         color: #cbd5e1;
         border-bottom: 1px solid rgba(59, 130, 246, 0.1);
     }
-    
+
     .comparison-table tr:hover {
         background: rgba(59, 130, 246, 0.05);
     }
-    
+
     .best-metric {
         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         padding: 0.25rem 0.75rem;
@@ -77,7 +77,7 @@
         font-weight: 600;
         color: white;
     }
-    
+
     .chart-container {
         background: rgba(15, 23, 42, 0.6);
         border: 1px solid rgba(59, 130, 246, 0.3);
@@ -102,13 +102,13 @@
             </a>
         </div>
     </div>
-    
+
     <!-- Model Selection -->
     <div class="comparison-card" data-aos="fade-up">
         <h3 class="mb-4">
             <i class="fas fa-check-square"></i> Select Models to Compare (minimum 2)
         </h3>
-        
+
         <div class="model-selector">
             {% for model in models %}
             <div class="model-select-card" data-model-id="{{ model.id }}" onclick="toggleModel({{ model.id }})">
@@ -120,18 +120,24 @@
                     <i class="fas fa-check-circle d-none" id="check-{{ model.id }}" style="color: #10b981; font-size: 1.5rem;"></i>
                 </div>
                 <div class="mt-3">
-                    <div class="text-muted small">Accuracy: {% if model.accuracy %}{% widthratio model.accuracy 1 100 %}{% else %}N/A{% endif %}%</div>
-                    <div class="text-muted small">F1 Score: {% if model.f1_score %}{{ model.f1_score|floatformat:4 }}{% else %}N/A{% endif %}</div>
+                    <div class="text-muted small">
+                        Accuracy:
+                        {% if model.accuracy != None %}{{ model.accuracy|floatformat:2 }}{% else %}N/A{% endif %}%
+                    </div>
+                    <div class="text-muted small">
+                        F1 Score:
+                        {% if model.f1_score != None %}{{ model.f1_score|floatformat:2 }}{% else %}N/A{% endif %}%
+                    </div>
                 </div>
             </div>
             {% endfor %}
         </div>
-        
+
         <button id="compareBtn" class="btn btn-lg btn-primary w-100" onclick="compareModels()" disabled>
             <i class="fas fa-chart-bar"></i> Compare Selected Models
         </button>
     </div>
-    
+
     <!-- Comparison Results -->
     <div id="comparisonResults" class="d-none">
         <!-- Metrics Comparison Table -->
@@ -139,20 +145,20 @@
             <h3 class="mb-4">
                 <i class="fas fa-table"></i> Metrics Comparison
             </h3>
-            
+
             <div class="table-responsive">
                 <table class="comparison-table" id="metricsTable">
                     <!-- Will be populated dynamically -->
                 </table>
             </div>
         </div>
-        
+
         <!-- Visualizations -->
         <div class="comparison-card" data-aos="fade-up">
             <h3 class="mb-4">
                 <i class="fas fa-chart-line"></i> Performance Visualizations
             </h3>
-            
+
             <div class="row">
                 <div class="col-md-6">
                     <div class="chart-container">
@@ -166,13 +172,13 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Best Model Recommendation -->
         <div class="comparison-card" data-aos="fade-up">
             <h3 class="mb-4">
                 <i class="fas fa-trophy"></i> Best Model Recommendations
             </h3>
-            
+
             <div id="recommendations" class="row">
                 <!-- Will be populated dynamically -->
             </div>
@@ -182,24 +188,40 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" 
-        integrity="sha256-6L0EgPqXb8LKH2i2k8vIkBYbvn0xdhLB3kHlU6F/G1I=" 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"
+        integrity="sha256-6L0EgPqXb8LKH2i2k8vIkBYbvn0xdhLB3kHlU6F/G1I="
         crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/toastify-js" 
-        integrity="sha256-3jCw4xRR6xk8PoYrFzd7yBJdHUAa+sLrKg7lq1T0w8Y=" 
+<script src="https://cdn.jsdelivr.net/npm/toastify-js"
         crossorigin="anonymous"></script>
-<link rel="stylesheet" type="text/css" 
+<link rel="stylesheet" type="text/css"
       href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"
-      integrity="sha256-3jCw4xRR6xk8PoYrFzd7yBJdHUAa+sLrKg7lq1T0w8Y=" 
       crossorigin="anonymous">
 
 <script>
     let selectedModels = new Set();
-    
+    let accuracyChartInstance = null;
+    let metricsChartInstance = null;
+
+    // Handles both formats:
+    // - stored as ratio (0..1) -> convert to %
+    // - stored as percent (0..100) -> keep as is
+    function toPercent(v) {
+        if (v === null || v === undefined || Number.isNaN(Number(v))) return null;
+        const n = Number(v);
+        return (n >= 0 && n <= 1) ? n * 100 : n;
+    }
+
+    function getCsrfToken() {
+        const match = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+        return match ? decodeURIComponent(match[1]) : '';
+    }
+
     function toggleModel(modelId) {
         const card = document.querySelector(`.model-select-card[data-model-id="${modelId}"]`);
         const check = document.getElementById(`check-${modelId}`);
-        
+
+        if (!card || !check) return;
+
         if (selectedModels.has(modelId)) {
             selectedModels.delete(modelId);
             card.classList.remove('selected');
@@ -209,28 +231,30 @@
             card.classList.add('selected');
             check.classList.remove('d-none');
         }
-        
-        // Enable/disable compare button
+
         document.getElementById('compareBtn').disabled = selectedModels.size < 2;
     }
-    
+
     function compareModels() {
         const modelIds = Array.from(selectedModels);
-        
+
         fetch('/training/compare-models', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
             },
             body: JSON.stringify({ model_ids: modelIds })
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                displayComparison(data.comparison);
-            } else {
-                throw new Error(data.error);
+        .then(async (response) => {
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Comparison failed');
             }
+            return data;
+        })
+        .then(data => {
+            displayComparison(data.comparison);
         })
         .catch(error => {
             Toastify({
@@ -240,11 +264,10 @@
             }).showToast();
         });
     }
-    
+
     function displayComparison(comparison) {
         document.getElementById('comparisonResults').classList.remove('d-none');
-        
-        // Build metrics table
+
         const table = document.getElementById('metricsTable');
         let html = `
             <thead>
@@ -259,49 +282,53 @@
             </thead>
             <tbody>
         `;
-        
+
         comparison.models.forEach(model => {
             const isAccuracyBest = model.name === comparison.best_accuracy;
             const isPrecisionBest = model.name === comparison.best_precision;
             const isRecallBest = model.name === comparison.best_recall;
             const isF1Best = model.name === comparison.best_f1;
-            
+
+            const acc = toPercent(model.accuracy);
+            const pre = toPercent(model.precision);
+            const rec = toPercent(model.recall);
+            const f1 = toPercent(model.f1_score);
+
             html += `
                 <tr>
                     <td><strong>${model.name}</strong> v${model.version}</td>
-                    <td ${isAccuracyBest ? 'class="best-metric"' : ''}>${model.accuracy ? (model.accuracy * 100).toFixed(2) + '%' : 'N/A'}</td>
-                    <td ${isPrecisionBest ? 'class="best-metric"' : ''}>${model.precision ? (model.precision * 100).toFixed(2) + '%' : 'N/A'}</td>
-                    <td ${isRecallBest ? 'class="best-metric"' : ''}>${model.recall ? (model.recall * 100).toFixed(2) + '%' : 'N/A'}</td>
-                    <td ${isF1Best ? 'class="best-metric"' : ''}>${model.f1_score ? model.f1_score.toFixed(4) : 'N/A'}</td>
+                    <td ${isAccuracyBest ? 'class="best-metric"' : ''}>${acc !== null ? acc.toFixed(2) + '%' : 'N/A'}</td>
+                    <td ${isPrecisionBest ? 'class="best-metric"' : ''}>${pre !== null ? pre.toFixed(2) + '%' : 'N/A'}</td>
+                    <td ${isRecallBest ? 'class="best-metric"' : ''}>${rec !== null ? rec.toFixed(2) + '%' : 'N/A'}</td>
+                    <td ${isF1Best ? 'class="best-metric"' : ''}>${f1 !== null ? f1.toFixed(2) + '%' : 'N/A'}</td>
                     <td>${new Date(model.created_at).toLocaleDateString()}</td>
                 </tr>
             `;
         });
-        
+
         html += '</tbody>';
         table.innerHTML = html;
-        
-        // Create charts
+
         createAccuracyChart(comparison.models);
         createMetricsChart(comparison.models);
-        
-        // Show recommendations
         displayRecommendations(comparison);
-        
-        // Scroll to results
+
         document.getElementById('comparisonResults').scrollIntoView({ behavior: 'smooth' });
     }
-    
+
     function createAccuracyChart(models) {
         const ctx = document.getElementById('accuracyChart');
-        
-        new Chart(ctx, {
+        if (!ctx) return;
+
+        if (accuracyChartInstance) accuracyChartInstance.destroy();
+
+        accuracyChartInstance = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: models.map(m => m.name),
                 datasets: [{
                     label: 'Accuracy (%)',
-                    data: models.map(m => m.accuracy ? m.accuracy * 100 : 0),
+                    data: models.map(m => toPercent(m.accuracy) ?? 0),
                     backgroundColor: 'rgba(59, 130, 246, 0.7)',
                     borderColor: 'rgba(59, 130, 246, 1)',
                     borderWidth: 2
@@ -335,26 +362,39 @@
             }
         });
     }
-    
+
     function createMetricsChart(models) {
         const ctx = document.getElementById('metricsChart');
-        
-        new Chart(ctx, {
+        if (!ctx) return;
+
+        if (metricsChartInstance) metricsChartInstance.destroy();
+
+        const palette = [
+            { bg: 'rgba(59,130,246,0.2)', border: 'rgba(59,130,246,1)' },
+            { bg: 'rgba(139,92,246,0.2)', border: 'rgba(139,92,246,1)' },
+            { bg: 'rgba(16,185,129,0.2)', border: 'rgba(16,185,129,1)' },
+            { bg: 'rgba(245,158,11,0.2)', border: 'rgba(245,158,11,1)' }
+        ];
+
+        metricsChartInstance = new Chart(ctx, {
             type: 'radar',
             data: {
                 labels: ['Accuracy', 'Precision', 'Recall', 'F1 Score'],
-                datasets: models.map((model, idx) => ({
-                    label: model.name,
-                    data: [
-                        model.accuracy ? model.accuracy * 100 : 0,
-                        model.precision ? model.precision * 100 : 0,
-                        model.recall ? model.recall * 100 : 0,
-                        model.f1_score ? model.f1_score * 100 : 0
-                    ],
-                    backgroundColor: `rgba(${59 + idx * 50}, ${130 - idx * 20}, ${246 - idx * 30}, 0.2)`,
-                    borderColor: `rgba(${59 + idx * 50}, ${130 - idx * 20}, ${246 - idx * 30}, 1)`,
-                    borderWidth: 2
-                }))
+                datasets: models.map((model, idx) => {
+                    const c = palette[idx % palette.length];
+                    return {
+                        label: model.name,
+                        data: [
+                            toPercent(model.accuracy) ?? 0,
+                            toPercent(model.precision) ?? 0,
+                            toPercent(model.recall) ?? 0,
+                            toPercent(model.f1_score) ?? 0
+                        ],
+                        backgroundColor: c.bg,
+                        borderColor: c.border,
+                        borderWidth: 2
+                    };
+                })
             },
             options: {
                 responsive: true,
@@ -381,17 +421,18 @@
             }
         });
     }
-    
+
     function displayRecommendations(comparison) {
         const div = document.getElementById('recommendations');
-        
+        if (!div) return;
+
         const recommendations = [
             { metric: 'Overall Accuracy', best: comparison.best_accuracy, icon: 'fa-bullseye', color: '#3b82f6' },
             { metric: 'Precision', best: comparison.best_precision, icon: 'fa-crosshairs', color: '#8b5cf6' },
             { metric: 'Recall', best: comparison.best_recall, icon: 'fa-search', color: '#10b981' },
             { metric: 'F1 Score', best: comparison.best_f1, icon: 'fa-balance-scale', color: '#f59e0b' }
         ];
-        
+
         let html = '';
         recommendations.forEach(rec => {
             html += `
@@ -408,8 +449,10 @@
                 </div>
             `;
         });
-        
+
         div.innerHTML = html;
     }
 </script>
 {% endblock %}
+````
+

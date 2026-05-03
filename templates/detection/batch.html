@@ -4,29 +4,112 @@
 {% block page_title %}Batch Detection{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h5><i class="fas fa-file-csv"></i> Batch CSV Upload</h5>
-    </div>
-    <div class="card-body">
-        <p>Upload a CSV file with multiple UAV data points for batch threat detection.</p>
-        
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            <div class="mb-3">
-                <label for="file" class="form-label">CSV File</label>
-                <input type="file" class="form-control" id="file" name="file" accept=".csv" required>
-                <small class="form-text text-muted">CSV should have columns: packet_size, inter_arrival_time, packet_rate, connection_duration, failed_logins</small>
+<div class="row mb-4">
+    <div class="col-lg-6" data-aos="fade-right">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-file-csv"></i> Upload CSV for Batch Detection</h5>
             </div>
-            
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-upload"></i> Upload and Process
-            </button>
-        </form>
-        
-        <div class="alert alert-info mt-3">
-            <strong>Note:</strong> This feature is under development. Coming soon!
+            <div class="card-body">
+                <p class="text-muted">Upload a CSV with UAV telemetry data. Required columns: <code>altitude, speed, direction, signal_strength, distance_from_base, flight_time, battery_level, temperature, vibration, gps_accuracy</code></p>
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="file" class="form-label">CSV File</label>
+                        <input type="file" class="form-control" id="file" name="file" accept=".csv" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-play-circle"></i> Run Batch Detection
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% if total > 0 %}
+    <div class="col-lg-6" data-aos="fade-left">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Batch Summary</h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="row">
+                    <div class="col-4">
+                        <h3 class="text-primary">{{ total }}</h3>
+                        <small class="text-muted">Total Samples</small>
+                    </div>
+                    <div class="col-4">
+                        <h3 class="text-success">{{ total|add:"-"|add:threat_count }}</h3>
+                        <small class="text-muted">Normal</small>
+                    </div>
+                    <div class="col-4">
+                        <h3 class="text-danger">{{ threat_count }}</h3>
+                        <small class="text-muted">Threats</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if results %}
+<div class="row" data-aos="fade-up">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-table"></i> Batch Results ({{ total }} samples)</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-hover table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Prediction</th>
+                                <th>Confidence</th>
+                                <th>Threat Level</th>
+                                <th>Altitude</th>
+                                <th>Speed</th>
+                                <th>Signal</th>
+                                <th>GPS Acc.</th>
+                                <th>Vibration</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in results %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>
+                                    {% if r.is_threat %}
+                                    <span class="badge bg-danger"><i class="fas fa-exclamation-triangle"></i> {{ r.prediction }}</span>
+                                    {% else %}
+                                    <span class="badge bg-success"><i class="fas fa-check-circle"></i> {{ r.prediction }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                            <div class="progress-bar {% if r.confidence > 0.8 %}bg-success{% elif r.confidence > 0.5 %}bg-warning{% else %}bg-danger{% endif %}"
+                                                 style="width: {% widthratio r.confidence 1 100 %}%"></div>
+                                        </div>
+                                        <small>{% widthratio r.confidence 1 100 %}%</small>
+                                    </div>
+                                </td>
+                                <td>{% include "components/alert_badge.html" with severity=r.threat_level %}</td>
+                                <td>{{ r.features.altitude }}</td>
+                                <td>{{ r.features.speed }}</td>
+                                <td>{{ r.features.signal_strength }}</td>
+                                <td>{{ r.features.gps_accuracy }}</td>
+                                <td>{{ r.features.vibration }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+{% endif %}
 {% endblock %}

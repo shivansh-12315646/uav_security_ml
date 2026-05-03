@@ -1,0 +1,470 @@
+{% extends "base.html" %}
+
+{% block title %}Drone Connection - UAV Security ML{% endblock %}
+{% block page_title %}System Integration — Real Drone Connection{% endblock %}
+
+{% block extra_css %}
+<style>
+.drone-card { transition: all 0.3s ease; border-left: 4px solid #64748b; }
+.drone-card.online { border-left-color: #10b981; }
+.drone-card.offline { border-left-color: #ef4444; }
+.drone-card.warning { border-left-color: #f59e0b; }
+.status-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+.status-dot.online { background: #10b981; box-shadow: 0 0 8px rgba(16,185,129,0.6); animation: blink 2s infinite; }
+.status-dot.offline { background: #ef4444; }
+.status-dot.warning { background: #f59e0b; animation: blink 1s infinite; }
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+.api-key-box { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.85rem; word-break: break-all; }
+.code-block { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 16px; overflow-x: auto; }
+.code-block code { color: #e2e8f0; font-size: 0.82rem; }
+.code-block .comment { color: #64748b; }
+.code-block .string { color: #10b981; }
+.code-block .keyword { color: #8b5cf6; }
+.telemetry-row.threat { background: rgba(239,68,68,0.1); border-left: 3px solid #ef4444; }
+.telemetry-row.normal { border-left: 3px solid transparent; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Banner -->
+<div class="row mb-4" data-aos="fade-down">
+    <div class="col-12">
+        <div class="card" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%); border: 1px solid rgba(6, 182, 212, 0.3);">
+            <div class="card-body py-4">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h3 class="mb-2"><i class="fas fa-satellite"></i> Real Drone Connection</h3>
+                        <p class="text-muted mb-0">Connect real UAV drones to the security system via REST API. Each drone gets a unique API key to stream telemetry data for real-time threat analysis.</p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#registerDroneModal">
+                            <i class="fas fa-plus-circle"></i> Register Drone
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3" data-aos="fade-up">
+        <div class="card metric-card info">
+            <div class="card-body text-center">
+                <i class="fas fa-satellite fa-2x mb-2 text-primary"></i>
+                <h3 class="mb-1">{{ total_count }}</h3>
+                <p class="text-muted mb-0">Registered Drones</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
+        <div class="card metric-card safe">
+            <div class="card-body text-center">
+                <i class="fas fa-wifi fa-2x mb-2 text-success"></i>
+                <h3 class="mb-1">{{ online_count }}</h3>
+                <p class="text-muted mb-0">Online Now</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
+        <div class="card metric-card danger">
+            <div class="card-body text-center">
+                <i class="fas fa-exclamation-triangle fa-2x mb-2 text-danger"></i>
+                <h3 class="mb-1">{{ threats_today }}</h3>
+                <p class="text-muted mb-0">Threats Today</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
+        <div class="card metric-card warning">
+            <div class="card-body text-center">
+                <i class="fas fa-database fa-2x mb-2 text-warning"></i>
+                <h3 class="mb-1">{{ total_telemetry }}</h3>
+                <p class="text-muted mb-0">Total Telemetry Records</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Status + Registered Drones -->
+<div class="row mb-4">
+    <!-- Notification Config -->
+    <div class="col-lg-4" data-aos="fade-right">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bell"></i> Notification Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span><i class="fab fa-telegram text-info"></i> Telegram</span>
+                        {% if notification_status.telegram.configured %}
+                        <span class="badge bg-success">Configured</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Not Set</span>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span><i class="fas fa-envelope text-warning"></i> Email (SMTP)</span>
+                        {% if notification_status.email.configured %}
+                        <span class="badge bg-success">Configured</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Not Set</span>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-desktop text-primary"></i> Browser Push</span>
+                        <span class="badge bg-success">Built-in</span>
+                    </div>
+                </div>
+                <hr>
+                <button class="btn btn-outline-info btn-sm w-100" onclick="testNotification()">
+                    <i class="fas fa-paper-plane"></i> Send Test Notification
+                </button>
+                <small class="text-muted d-block mt-2">
+                    <i class="fas fa-info-circle"></i> Configure Telegram: set <code>TELEGRAM_BOT_TOKEN</code> and <code>TELEGRAM_CHAT_ID</code> in your <code>.env</code> file.
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registered Drones -->
+    <div class="col-lg-8" data-aos="fade-left">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-drone"></i> Registered Drones</h5>
+                <button class="btn btn-sm btn-outline-primary" onclick="location.reload()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+            <div class="card-body">
+                {% if devices %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Name</th>
+                                <th>Last Seen</th>
+                                <th>Registered</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for device in devices %}
+                            <tr>
+                                <td>
+                                    <span class="status-dot {{ device.status }}"></span>
+                                    <span class="ms-1 badge bg-{% if device.status == 'online' %}success{% elif device.status == 'warning' %}warning{% else %}secondary{% endif %}">{{ device.status|title }}</span>
+                                </td>
+                                <td><strong>{{ device.name }}</strong></td>
+                                <td>
+                                    {% if device.last_seen %}
+                                    <small>{{ device.last_seen|timesince }} ago</small>
+                                    {% else %}
+                                    <small class="text-muted">Never</small>
+                                    {% endif %}
+                                </td>
+                                <td><small>{{ device.created_at|date:"Y-m-d" }}</small></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteDrone({{ device.id }}, '{{ device.name }}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-satellite fa-3x mb-3 opacity-50"></i>
+                    <p class="mb-1">No drones registered yet.</p>
+                    <small>Click "Register Drone" to add your first device.</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Telemetry -->
+<div class="row mb-4" data-aos="fade-up">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-stream"></i> Recent Drone Telemetry</h5>
+                <small class="text-muted" id="telemetryAutoRefresh">Auto-refreshes every 10s</small>
+            </div>
+            <div class="card-body" id="telemetryFeed">
+                {% if recent_telemetry %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Drone</th>
+                                <th>Prediction</th>
+                                <th>Confidence</th>
+                                <th>Threat Level</th>
+                                <th>Alt</th>
+                                <th>Signal</th>
+                                <th>GPS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in recent_telemetry %}
+                            <tr class="telemetry-row {% if t.is_threat %}threat{% else %}normal{% endif %}">
+                                <td><small>{{ t.timestamp|date:"H:i:s" }}</small></td>
+                                <td><strong>{{ t.device.name }}</strong></td>
+                                <td>
+                                    {% if t.is_threat %}
+                                    <span class="badge bg-danger"><i class="fas fa-exclamation-triangle"></i> {{ t.prediction }}</span>
+                                    {% else %}
+                                    <span class="badge bg-success"><i class="fas fa-check-circle"></i> {{ t.prediction }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{% widthratio t.confidence 1 100 %}%</td>
+                                <td>
+                                    <span class="badge bg-{% if t.threat_level == 'Critical' %}danger{% elif t.threat_level == 'High' %}warning{% elif t.threat_level == 'Medium' %}info{% else %}secondary{% endif %}">{{ t.threat_level }}</span>
+                                </td>
+                                <td>{{ t.altitude|floatformat:1 }}m</td>
+                                <td>{{ t.signal_strength|floatformat:0 }}%</td>
+                                <td>{{ t.gps_accuracy|floatformat:0 }}%</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-stream fa-3x mb-3 opacity-50"></i>
+                    <p class="mb-1">No telemetry received yet.</p>
+                    <small>Connect a drone using the API to see live data here.</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- API Documentation -->
+<div class="row" data-aos="fade-up">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-code"></i> API Integration Guide</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Python Example -->
+                    <div class="col-lg-6 mb-4">
+                        <h6 class="text-primary"><i class="fab fa-python"></i> Python (Raspberry Pi / Companion Computer)</h6>
+                        <div class="code-block">
+<pre><code><span class="keyword">import</span> requests, time, random
+
+<span class="comment"># Your drone's API key (from registration)</span>
+API_KEY = <span class="string">"YOUR_API_KEY_HERE"</span>
+BASE_URL = <span class="string">"http://YOUR_SERVER:8000"</span>
+
+<span class="keyword">while</span> <span class="keyword">True</span>:
+    <span class="comment"># Read real sensor data (replace with actual)</span>
+    telemetry = {
+        <span class="string">"altitude"</span>: read_altimeter(),
+        <span class="string">"speed"</span>: read_gps_speed(),
+        <span class="string">"direction"</span>: read_compass(),
+        <span class="string">"signal_strength"</span>: read_signal(),
+        <span class="string">"distance_from_base"</span>: calc_distance(),
+        <span class="string">"flight_time"</span>: get_flight_time(),
+        <span class="string">"battery_level"</span>: read_battery(),
+        <span class="string">"temperature"</span>: read_temp(),
+        <span class="string">"vibration"</span>: read_imu(),
+        <span class="string">"gps_accuracy"</span>: read_gps_hdop(),
+    }
+
+    resp = requests.post(
+        f<span class="string">"{BASE_URL}/drone/api/telemetry/"</span>,
+        json=telemetry,
+        headers={<span class="string">"X-API-Key"</span>: API_KEY},
+    )
+    result = resp.json()
+    <span class="keyword">print</span>(f<span class="string">"Prediction: {result['prediction']}"</span>)
+
+    time.sleep(5)  <span class="comment"># Send every 5 seconds</span></code></pre>
+                        </div>
+                    </div>
+
+                    <!-- cURL Example -->
+                    <div class="col-lg-6 mb-4">
+                        <h6 class="text-success"><i class="fas fa-terminal"></i> cURL (Quick Test)</h6>
+                        <div class="code-block">
+<pre><code><span class="comment"># Register a drone (requires login session)</span>
+curl -X POST http://localhost:8000/drone/api/register/ \
+  -H <span class="string">"Content-Type: application/json"</span> \
+  -d <span class="string">'{"name": "DroneAlpha"}'</span>
+
+<span class="comment"># Send telemetry data</span>
+curl -X POST http://localhost:8000/drone/api/telemetry/ \
+  -H <span class="string">"Content-Type: application/json"</span> \
+  -H <span class="string">"X-API-Key: YOUR_API_KEY"</span> \
+  -d <span class="string">'{
+    "altitude": 50,
+    "speed": 10,
+    "direction": 1,
+    "signal_strength": 21,
+    "distance_from_base": 3050,
+    "flight_time": 123,
+    "battery_level": 98,
+    "temperature": 15,
+    "vibration": 0,
+    "gps_accuracy": 100
+  }'</span>
+
+<span class="comment"># Heartbeat check</span>
+curl http://localhost:8000/drone/api/heartbeat/ \
+  -H <span class="string">"X-API-Key: YOUR_API_KEY"</span></code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Endpoints Reference -->
+                <h6 class="mt-3 mb-3"><i class="fas fa-book"></i> API Endpoints</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><span class="badge bg-success">POST</span></td><td><code>/drone/api/register/</code></td><td>Session</td><td>Register a new drone, returns API key</td></tr>
+                            <tr><td><span class="badge bg-success">POST</span></td><td><code>/drone/api/telemetry/</code></td><td>X-API-Key</td><td>Submit telemetry, get threat prediction</td></tr>
+                            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/drone/api/heartbeat/</code></td><td>X-API-Key</td><td>Heartbeat / connectivity check</td></tr>
+                            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/drone/api/{id}/history/</code></td><td>Session</td><td>Get telemetry history for a drone</td></tr>
+                            <tr><td><span class="badge bg-danger">POST</span></td><td><code>/drone/api/{id}/delete/</code></td><td>Session</td><td>Unregister a drone</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Register Drone Modal -->
+<div class="modal fade" id="registerDroneModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary bg-gradient text-white">
+                <h5 class="modal-title"><i class="fas fa-plus-circle"></i> Register New Drone</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="registerForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Drone Name</label>
+                        <input type="text" class="form-control" id="droneName" placeholder="e.g., DroneAlpha-01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Description (optional)</label>
+                        <textarea class="form-control" id="droneDesc" rows="2" placeholder="e.g., DJI Mavic 3 - North Patrol"></textarea>
+                    </div>
+                    <button class="btn btn-primary w-100" onclick="registerDrone()">
+                        <i class="fas fa-key"></i> Generate API Key & Register
+                    </button>
+                </div>
+                <div id="registerResult" class="d-none">
+                    <div class="alert alert-success">
+                        <h6><i class="fas fa-check-circle"></i> Drone Registered!</h6>
+                        <p class="mb-2">Save your API key — it won't be shown again:</p>
+                        <div class="api-key-box" id="newApiKey"></div>
+                    </div>
+                    <button class="btn btn-outline-primary w-100 mt-2" onclick="copyApiKey()">
+                        <i class="fas fa-copy"></i> Copy API Key
+                    </button>
+                    <button class="btn btn-success w-100 mt-2" onclick="location.reload()">
+                        <i class="fas fa-check"></i> Done
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF = '{{ csrf_token }}';
+
+function registerDrone() {
+    const name = document.getElementById('droneName').value.trim();
+    if (!name) { alert('Please enter a drone name'); return; }
+
+    fetch('{% url "drone_register" %}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF},
+        body: JSON.stringify({
+            name: name,
+            description: document.getElementById('droneDesc').value.trim()
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('registerForm').classList.add('d-none');
+            document.getElementById('registerResult').classList.remove('d-none');
+            document.getElementById('newApiKey').textContent = data.api_key;
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(e => alert('Error: ' + e));
+}
+
+function copyApiKey() {
+    const key = document.getElementById('newApiKey').textContent;
+    navigator.clipboard.writeText(key).then(() => {
+        if (window.dashboardUtils) window.dashboardUtils.showToast('API key copied!', 'success');
+    });
+}
+
+function deleteDrone(id, name) {
+    if (!confirm(`Delete drone "${name}"? This will also remove its telemetry history.`)) return;
+    fetch(`/drone/api/${id}/delete/`, {
+        method: 'POST',
+        headers: {'X-CSRFToken': CSRF}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) location.reload();
+        else alert('Error: ' + (data.error || 'Unknown'));
+    })
+    .catch(e => alert('Error: ' + e));
+}
+
+function testNotification() {
+    fetch('{% url "test_notification" %}')
+    .then(r => r.json())
+    .then(data => {
+        if (data.sent) {
+            if (window.dashboardUtils) window.dashboardUtils.showToast('Test notification sent!', 'success');
+        } else {
+            alert('Notification not sent: ' + (data.reason || JSON.stringify(data.channels || {})));
+        }
+    })
+    .catch(e => alert('Error: ' + e));
+}
+
+// Auto-refresh telemetry every 10s
+setInterval(() => {
+    if (document.hidden) return;
+    fetch(window.location.href, {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+    .then(r => r.text())
+    .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newFeed = doc.getElementById('telemetryFeed');
+        if (newFeed) {
+            document.getElementById('telemetryFeed').innerHTML = newFeed.innerHTML;
+        }
+    })
+    .catch(() => {});
+}, 10000);
+</script>
+{% endblock %}

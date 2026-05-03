@@ -68,6 +68,12 @@
                 <span class="badge bg-danger">{{ active_alerts_count }}</span>
                 {% endif %}
             </a>
+            <a href="{% url 'unsupervised_dashboard' %}" class="nav-link">
+                <i class="fas fa-project-diagram"></i> Unsupervised ML
+            </a>
+            <a href="{% url 'drone_dashboard' %}" class="nav-link">
+                <i class="fas fa-satellite"></i> Drone Connection
+            </a>
             {% if request.user.is_admin %}
             <a href="{% url 'training_dashboard' %}" class="nav-link">
                 <i class="fas fa-brain"></i> Model Training

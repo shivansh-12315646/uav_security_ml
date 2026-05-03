@@ -1,0 +1,582 @@
+{% extends "base.html" %}
+
+{% block title %}Unsupervised Analysis - UAV Security ML{% endblock %}
+{% block page_title %}Unsupervised Machine Learning Analysis{% endblock %}
+
+{% block content %}
+<!-- Hero Banner -->
+<div class="row mb-4" data-aos="fade-down">
+    <div class="col-12">
+        <div class="card" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(6, 182, 212, 0.2) 100%); border: 1px solid rgba(139, 92, 246, 0.3);">
+            <div class="card-body text-center py-4">
+                <h3 class="mb-2"><i class="fas fa-project-diagram"></i> Unsupervised Learning Analysis</h3>
+                <p class="text-muted mb-3">K-Means Clustering &bull; DBSCAN &bull; Isolation Forest &bull; PCA &bull; t-SNE</p>
+                {% if not has_results %}
+                <button class="btn btn-primary btn-lg" id="runAnalysisBtn" onclick="runAnalysis()">
+                    <i class="fas fa-play-circle"></i> Run Full Analysis
+                </button>
+                <p class="text-muted mt-2 small">Trains all unsupervised models on the UAV dataset</p>
+                {% else %}
+                <span class="badge bg-success fs-6 px-3 py-2"><i class="fas fa-check-circle"></i> Analysis Complete</span>
+                <button class="btn btn-outline-primary btn-sm ms-2" onclick="runAnalysis()">
+                    <i class="fas fa-redo"></i> Re-run
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="analysisLoading" class="d-none">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <div class="spinner-border text-primary mb-3" role="status"></div>
+                    <h5>Running Unsupervised Analysis...</h5>
+                    <p class="text-muted">Training K-Means, DBSCAN, Isolation Forest, PCA, and t-SNE</p>
+                    <div class="progress mt-3" style="height: 6px; max-width: 400px; margin: 0 auto;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if has_results %}
+<!-- Metrics Cards -->
+<div class="row mb-4" id="metricsSection">
+    <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="0">
+        <div class="card metric-card info">
+            <div class="card-body text-center">
+                <i class="fas fa-layer-group fa-2x mb-2 text-primary"></i>
+                <h3 class="mb-1">{{ kmeans_k }}</h3>
+                <p class="text-muted mb-1">K-Means Clusters</p>
+                <small class="text-info">Silhouette: {{ kmeans_silhouette }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="100">
+        <div class="card metric-card safe">
+            <div class="card-body text-center">
+                <i class="fas fa-circle-nodes fa-2x mb-2 text-success"></i>
+                <h3 class="mb-1">{{ dbscan_clusters }}</h3>
+                <p class="text-muted mb-1">DBSCAN Clusters</p>
+                <small class="text-warning">Noise: {{ dbscan_noise }} pts</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="200">
+        <div class="card metric-card danger">
+            <div class="card-body text-center">
+                <i class="fas fa-bug fa-2x mb-2 text-danger"></i>
+                <h3 class="mb-1">{{ anomaly_count }}</h3>
+                <p class="text-muted mb-1">Anomalies Detected</p>
+                <small class="text-danger">Rate: {{ anomaly_rate }}%</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="300">
+        <div class="card metric-card warning">
+            <div class="card-body text-center">
+                <i class="fas fa-compress-arrows-alt fa-2x mb-2 text-warning"></i>
+                <h3 class="mb-1">{{ pca_variance }}%</h3>
+                <p class="text-muted mb-1">PCA Variance Explained</p>
+                <small class="text-muted">2 Components</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 1: Elbow + Silhouette -->
+<div class="row mb-4">
+    <div class="col-lg-6" data-aos="fade-right">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-line"></i> Elbow Method (Optimal k)</h5>
+            </div>
+            <div class="card-body">
+                <div style="position:relative;height:300px;">
+                    <canvas id="elbowChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6" data-aos="fade-left">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Silhouette Scores by k</h5>
+            </div>
+            <div class="card-body">
+                <div style="position:relative;height:300px;">
+                    <canvas id="silhouetteChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 2: Cluster Sizes + Anomaly Distribution -->
+<div class="row mb-4">
+    <div class="col-lg-6" data-aos="fade-up">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie"></i> K-Means Cluster Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div style="position:relative;height:300px;">
+                    <canvas id="clusterPieChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6" data-aos="fade-up" data-aos-delay="100">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-shield-alt"></i> Anomaly Detection (Isolation Forest)</h5>
+            </div>
+            <div class="card-body">
+                <div style="position:relative;height:300px;">
+                    <canvas id="anomalyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 3: Algorithm Comparison Table -->
+<div class="row mb-4" data-aos="fade-up">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-table"></i> Unsupervised Algorithm Comparison</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Algorithm</th>
+                                <th>Clusters</th>
+                                <th>Silhouette Score</th>
+                                <th>Calinski-Harabasz</th>
+                                <th>Davies-Bouldin</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><i class="fas fa-layer-group text-primary"></i> <strong>K-Means</strong></td>
+                                <td><span class="badge bg-primary">{{ kmeans_k }}</span></td>
+                                <td>{{ kmeans_silhouette }}</td>
+                                <td>{{ kmeans_ch }}</td>
+                                <td>{{ kmeans_db }}</td>
+                                <td><small class="text-muted">Centroid-based, optimal k via elbow</small></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-circle-nodes text-success"></i> <strong>DBSCAN</strong></td>
+                                <td><span class="badge bg-success">{{ dbscan_clusters }}</span></td>
+                                <td>{{ dbscan_silhouette }}</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td><small class="text-muted">Density-based, {{ dbscan_noise }} noise pts</small></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-bug text-danger"></i> <strong>Isolation Forest</strong></td>
+                                <td><span class="badge bg-danger">{{ anomaly_count }} anomalies</span></td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td><small class="text-muted">Anomaly rate: {{ anomaly_rate }}%</small></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-compress-arrows-alt text-warning"></i> <strong>PCA</strong></td>
+                                <td><span class="badge bg-warning text-dark">2 components</span></td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td><small class="text-muted">{{ pca_variance }}% variance explained</small></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 4: PCA Scatter Plot (Interactive) -->
+<div class="row mb-4" data-aos="fade-up">
+    <div class="col-12">
+        <div class="card" style="border: 1px solid rgba(129,140,248,0.3);">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-braille"></i> Interactive PCA Cluster Map <span class="badge bg-primary ms-2" style="font-size:0.7rem;">LIVE DATA</span></h5>
+                <button class="btn btn-sm btn-outline-primary" id="loadScatterBtn" onclick="loadScatterPlot()">
+                    <i class="fas fa-play-circle"></i> Load Cluster Visualization
+                </button>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3"><i class="fas fa-info-circle"></i> PCA reduces 10 UAV telemetry features into 2 dimensions. Each dot = one UAV flight record, colored by its K-Means cluster assignment.</p>
+                <div id="scatterLoading" class="text-center py-4 d-none">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="mt-2 text-muted">Projecting {{ results_json.data_shape.0|default:"20000" }} samples into 2D space...</p>
+                </div>
+                <div id="scatterContainer" style="position:relative;height:420px;">
+                    <canvas id="scatterChart"></canvas>
+                </div>
+                <div id="scatterPlaceholder" class="text-center py-5">
+                    <i class="fas fa-braille fa-3x mb-3" style="color:rgba(129,140,248,0.3);"></i>
+                    <p class="text-muted">Click <strong>Load Cluster Visualization</strong> to render the interactive scatter plot</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 5: Algorithm Comparison + PCA Variance -->
+<div class="row mb-4" data-aos="fade-up">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-trophy"></i> Algorithm Performance Comparison</h5>
+            </div>
+            <div class="card-body">
+                <div style="position:relative;height:260px;">
+                    <canvas id="algoComparisonChart"></canvas>
+                </div>
+                <p class="text-muted small mt-2 mb-0"><i class="fas fa-info-circle"></i> Silhouette score: higher is better. Range [-1, 1]. K-Means and DBSCAN shown side-by-side.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-compress-arrows-alt"></i> PCA Explained Variance</h5>
+            </div>
+            <div class="card-body">
+                <div style="position:relative;height:260px;">
+                    <canvas id="pcaVarianceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 6: Anomaly Score Stats + Evaluation Guide -->
+<div class="row mb-4" data-aos="fade-up">
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bug"></i> Isolation Forest Score Analysis</h5>
+            </div>
+            <div class="card-body">
+                {% if has_results %}
+                <p class="text-muted small">Anomaly decision scores — negative = anomaly, positive = normal. The boundary is at 0.</p>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1"><span class="small fw-bold">Mean Score</span><span class="badge bg-info" id="scoreMean">—</span></div>
+                    <div class="d-flex justify-content-between mb-1"><span class="small fw-bold">Std Deviation</span><span class="badge bg-secondary" id="scoreStd">—</span></div>
+                    <div class="d-flex justify-content-between mb-1"><span class="small fw-bold">Min Score (Most Anomalous)</span><span class="badge bg-danger" id="scoreMin">—</span></div>
+                    <div class="d-flex justify-content-between mb-1"><span class="small fw-bold">Max Score (Most Normal)</span><span class="badge bg-success" id="scoreMax">—</span></div>
+                </div>
+                <div style="position:relative;height:160px;">
+                    <canvas id="scoreGaugeChart"></canvas>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-graduation-cap"></i> Evaluation Metrics Reference</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="p-3 rounded" style="background:rgba(99,102,241,0.08);border-left:3px solid #818cf8;">
+                            <h6 class="text-primary mb-1"><i class="fas fa-ruler-combined"></i> Silhouette Score</h6>
+                            <p class="small text-muted mb-0">Measures intra-cluster cohesion vs inter-cluster separation. Range: [-1, 1]. Higher = better.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="p-3 rounded" style="background:rgba(52,211,153,0.08);border-left:3px solid #34d399;">
+                            <h6 class="text-success mb-1"><i class="fas fa-chart-bar"></i> Calinski-Harabasz</h6>
+                            <p class="small text-muted mb-0">Between-cluster to within-cluster variance ratio. Higher = denser, well-separated clusters.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="p-3 rounded" style="background:rgba(251,191,36,0.08);border-left:3px solid #fbbf24;">
+                            <h6 class="text-warning mb-1"><i class="fas fa-bullseye"></i> Davies-Bouldin</h6>
+                            <p class="small text-muted mb-0">Average cluster similarity. Lower = better. Perfect clustering = 0.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="p-3 rounded" style="background:rgba(248,113,113,0.08);border-left:3px solid #f87171;">
+                            <h6 class="text-danger mb-1"><i class="fas fa-bug"></i> Anomaly Rate</h6>
+                            <p class="small text-muted mb-0">Isolation Forest contamination. Negative decision scores indicate anomalous UAV behavior.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{{ results_json|json_script:"unsupervised-results" }}
+<script>
+const CSRF_TOKEN = '{{ csrf_token }}';
+
+function runAnalysis() {
+    const btn = document.getElementById('runAnalysisBtn');
+    const loading = document.getElementById('analysisLoading');
+    if (btn) btn.disabled = true;
+    if (loading) loading.classList.remove('d-none');
+    fetch('{% url "api_run_analysis" %}', { method: 'POST', headers: {'X-CSRFToken': CSRF_TOKEN} })
+    .then(r => r.json())
+    .then(data => { if (data.success) location.reload(); else alert('Error: ' + (data.error || 'Unknown')); })
+    .catch(e => alert('Error: ' + e))
+    .finally(() => { if (btn) btn.disabled = false; if (loading) loading.classList.add('d-none'); });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof Chart === 'undefined') return;
+
+    let raw;
+    try { raw = JSON.parse(document.getElementById('unsupervised-results')?.textContent || '{}'); } catch(e) { return; }
+    if (!raw.kmeans) return;
+
+    const palette = window.UAVTheme ? window.UAVTheme.getPalette() : ['#818cf8','#22d3ee','#fbbf24','#f472b6','#34d399','#a78bfa','#fb923c','#2dd4bf'];
+    const T = () => window.UAVTheme?.getChartColors?.() || {chartText:'#f8fafc', chartGrid:'rgba(129,140,248,0.15)'};
+
+    const elbow = raw.kmeans.elbow || {};
+    const kVals = (elbow.k_values || []).map(String);
+    const inertias = elbow.inertias || [];
+    const silScores = elbow.silhouette_scores || [];
+    const clusterSizes = raw.kmeans.cluster_sizes || {};
+
+    // Premium tooltip config
+    const tooltipCfg = {
+        backgroundColor: 'rgba(10,14,26,0.95)',
+        titleColor: '#ffffff',
+        bodyColor: '#e2e8f0',
+        borderColor: 'rgba(129,140,248,0.4)',
+        borderWidth: 1,
+        cornerRadius: 10,
+        padding: 14,
+        titleFont: {size:13, weight:700},
+        bodyFont: {size:12, weight:500}
+    };
+
+    // FIX: maintainAspectRatio:false prevents chart shrinking on hover
+    const baseOpts = () => ({
+        responsive: true,
+        maintainAspectRatio: false,  // ← THE FIX for chart shrinking bug
+        plugins: {
+            legend: { labels: { color: T().chartText, font: {family:"'Inter'", weight:600, size:13} } },
+            tooltip: tooltipCfg
+        },
+        scales: {
+            y: { beginAtZero: false, ticks: { color: T().chartText, font:{size:12,weight:500} }, grid: { color: T().chartGrid } },
+            x: { ticks: { color: T().chartText, font:{size:12,weight:500} }, grid: { display: false } }
+        }
+    });
+
+    // 1. Elbow chart
+    const e1 = document.getElementById('elbowChart');
+    if (e1) {
+        const grad = e1.getContext('2d').createLinearGradient(0, 0, 0, 300);
+        grad.addColorStop(0, 'rgba(129,140,248,0.4)'); grad.addColorStop(1, 'rgba(129,140,248,0.02)');
+        new Chart(e1, {
+            type: 'line',
+            data: { labels: kVals, datasets: [{ label: 'Inertia (WCSS)', data: inertias, borderColor: '#818cf8', backgroundColor: grad, fill: true, tension: 0.4, borderWidth: 3, pointRadius: 6, pointBackgroundColor: '#818cf8', pointBorderColor: '#fff', pointBorderWidth: 2, pointHoverRadius: 9 }] },
+            options: baseOpts()
+        });
+    }
+
+    // 2. Silhouette chart
+    const e2 = document.getElementById('silhouetteChart');
+    if (e2) {
+        const bestIdx = silScores.indexOf(Math.max(...silScores));
+        const colors = silScores.map((_, i) => {
+            const g = e2.getContext('2d').createLinearGradient(0, 0, 0, 250);
+            const c = i === bestIdx ? '#34d399' : '#818cf8';
+            g.addColorStop(0, c); g.addColorStop(1, c + '33');
+            return g;
+        });
+        const opts = baseOpts();
+        opts.scales.y.beginAtZero = true; opts.scales.y.max = 1;
+        new Chart(e2, {
+            type: 'bar',
+            data: { labels: kVals, datasets: [{ label: 'Silhouette Score', data: silScores, backgroundColor: colors, borderRadius: 8, borderSkipped: false }] },
+            options: opts
+        });
+    }
+
+    // 3. Cluster pie
+    const e3 = document.getElementById('clusterPieChart');
+    if (e3) {
+        new Chart(e3, {
+            type: 'doughnut',
+            data: { labels: Object.keys(clusterSizes).map(k => 'Cluster ' + k), datasets: [{ data: Object.values(clusterSizes), backgroundColor: palette, borderWidth: 0, hoverBorderColor: '#fff', hoverBorderWidth: 3, hoverOffset: 10 }] },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { color: T().chartText, padding: 16, font:{family:"'Inter'",size:12,weight:600}, usePointStyle: true, pointStyleWidth: 12 } }, tooltip: tooltipCfg } }
+        });
+    }
+
+    // 4. Anomaly chart
+    const e4 = document.getElementById('anomalyChart');
+    if (e4) {
+        const nN = raw.isolation_forest?.n_normal || 0;
+        const nA = raw.isolation_forest?.n_anomalies || 0;
+        new Chart(e4, {
+            type: 'doughnut',
+            data: { labels: ['Normal', 'Anomaly'], datasets: [{ data: [nN, nA], backgroundColor: ['#34d399', '#f87171'], borderWidth: 0, hoverBorderColor: '#fff', hoverBorderWidth: 3, hoverOffset: 10 }] },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { color: T().chartText, padding: 16, font:{family:"'Inter'",size:12,weight:600}, usePointStyle: true, pointStyleWidth: 12 } }, tooltip: tooltipCfg } }
+        });
+    }
+
+    // 5. Algorithm Comparison horizontal bar
+    const e5 = document.getElementById('algoComparisonChart');
+    if (e5) {
+        const kmSil = raw.kmeans?.metrics?.silhouette_score || 0;
+        const dbSil = raw.dbscan?.metrics?.silhouette_score || 0;
+        const kmCH  = (raw.kmeans?.metrics?.calinski_harabasz_index || 0) / 1000; // scale for display
+        const kmDB  = raw.kmeans?.metrics?.davies_bouldin_index || 0;
+        const g1 = e5.getContext('2d').createLinearGradient(300,0,0,0);
+        g1.addColorStop(0,'#818cf8'); g1.addColorStop(1,'#818cf888');
+        const g2 = e5.getContext('2d').createLinearGradient(300,0,0,0);
+        g2.addColorStop(0,'#34d399'); g2.addColorStop(1,'#34d39988');
+        new Chart(e5, {
+            type: 'bar',
+            data: {
+                labels: ['K-Means Silhouette', 'DBSCAN Silhouette', 'CH Index (÷1000)', 'Davies-Bouldin (inv)'],
+                datasets: [{
+                    label: 'Score',
+                    data: [kmSil, dbSil, kmCH, kmDB > 0 ? (1/kmDB).toFixed(3) : 0],
+                    backgroundColor: [g1, g2, '#fbbf24', '#f87171'],
+                    borderRadius: 8, borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+                plugins: { legend: { display: false }, tooltip: tooltipCfg },
+                scales: {
+                    x: { beginAtZero: true, ticks: { color: T().chartText, font:{size:11} }, grid: { color: T().chartGrid } },
+                    y: { ticks: { color: T().chartText, font:{size:11, weight:600} }, grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    // 6. PCA Variance Doughnut
+    const e6 = document.getElementById('pcaVarianceChart');
+    if (e6) {
+        const varRatio = raw.pca?.explained_variance_ratio || [0.5, 0.3];
+        const remaining = Math.max(0, 1 - varRatio.reduce((a,b) => a+b, 0));
+        const labels = varRatio.map((v, i) => `PC${i+1} (${(v*100).toFixed(1)}%)`);
+        labels.push(`Remaining (${(remaining*100).toFixed(1)}%)`);
+        const vals = [...varRatio, remaining];
+        new Chart(e6, {
+            type: 'doughnut',
+            data: { labels, datasets: [{ data: vals, backgroundColor: ['#818cf8','#22d3ee','rgba(100,116,139,0.3)'], borderWidth: 0, hoverBorderColor:'#fff', hoverBorderWidth:3, hoverOffset:8 }] },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position:'bottom', labels:{ color: T().chartText, padding:12, font:{size:12,weight:600}, usePointStyle:true } }, tooltip: tooltipCfg } }
+        });
+    }
+
+    // 7. Anomaly Score Gauge (bar chart min/mean/max)
+    const e7 = document.getElementById('scoreGaugeChart');
+    const scoreStats = raw.isolation_forest?.score_stats || {};
+    if (e7 && scoreStats.mean !== undefined) {
+        document.getElementById('scoreMean').textContent = scoreStats.mean.toFixed(4);
+        document.getElementById('scoreStd').textContent  = scoreStats.std.toFixed(4);
+        document.getElementById('scoreMin').textContent  = scoreStats.min.toFixed(4);
+        document.getElementById('scoreMax').textContent  = scoreStats.max.toFixed(4);
+        new Chart(e7, {
+            type: 'bar',
+            data: {
+                labels: ['Min', 'Mean', 'Max'],
+                datasets: [{ label: 'Score', data: [scoreStats.min, scoreStats.mean, scoreStats.max], backgroundColor: ['#f87171','#fbbf24','#34d399'], borderRadius: 8, borderSkipped: false }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend:{display:false}, tooltip: tooltipCfg,
+                    annotation: { annotations: { line0: { type:'line', yMin:0, yMax:0, borderColor:'rgba(248,113,113,0.8)', borderWidth:2, borderDash:[6,3], label:{content:'Decision Boundary (0)', enabled:true} } } }
+                },
+                scales: {
+                    y: { ticks:{color: T().chartText, font:{size:11}}, grid:{color: T().chartGrid} },
+                    x: { ticks:{color: T().chartText, font:{size:12,weight:600}}, grid:{display:false} }
+                }
+            }
+        });
+    }
+});
+
+// Scatter plot loader — fetches live PCA cluster data from API
+let scatterChart = null;
+function loadScatterPlot() {
+    const btn = document.getElementById('loadScatterBtn');
+    const loading = document.getElementById('scatterLoading');
+    const placeholder = document.getElementById('scatterPlaceholder');
+    const container = document.getElementById('scatterContainer');
+
+    if (btn) btn.disabled = true;
+    if (loading) loading.classList.remove('d-none');
+    if (placeholder) placeholder.classList.add('d-none');
+    if (container) container.style.display = 'none';
+
+    fetch('{% url "api_cluster_data" %}', { headers: {'X-Requested-With':'XMLHttpRequest'} })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) { alert('Error: ' + data.error); return; }
+
+        const coords = data.coordinates || [];
+        const labels = data.labels || [];
+        const nClusters = data.n_clusters || 6;
+
+        const palette = window.UAVTheme ? window.UAVTheme.getPalette() : ['#818cf8','#22d3ee','#fbbf24','#f472b6','#34d399','#a78bfa','#fb923c','#2dd4bf'];
+        const T = () => window.UAVTheme?.getChartColors?.() || {chartText:'#f8fafc', chartGrid:'rgba(129,140,248,0.15)'};
+
+        // Group points by cluster
+        const datasets = Array.from({length: nClusters}, (_, ci) => ({
+            label: `Cluster ${ci}`,
+            data: coords.filter((_, i) => labels[i] === ci).map(p => ({x: p[0], y: p[1]})),
+            backgroundColor: (palette[ci % palette.length]) + 'bb',
+            pointRadius: 3,
+            pointHoverRadius: 6,
+        }));
+
+        if (scatterChart) scatterChart.destroy();
+        const ctx = document.getElementById('scatterChart');
+        const tooltipCfg = { backgroundColor:'rgba(10,14,26,0.95)', titleColor:'#fff', bodyColor:'#e2e8f0', borderColor:'rgba(129,140,248,0.4)', borderWidth:1, cornerRadius:10, padding:12 };
+
+        scatterChart = new Chart(ctx, {
+            type: 'scatter',
+            data: { datasets },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { position:'right', labels:{ color: T().chartText, font:{size:12,weight:600}, usePointStyle:true, pointStyleWidth:10, padding:12 } },
+                    tooltip: { ...tooltipCfg, callbacks: { label: ctx => `(${ctx.parsed.x.toFixed(2)}, ${ctx.parsed.y.toFixed(2)})` } },
+                    title: { display:true, text:'PCA Projection — UAV Flight Records by Cluster', color: T().chartText, font:{size:14,weight:700}, padding:{bottom:12} }
+                },
+                scales: {
+                    x: { title:{display:true, text:'Principal Component 1', color: T().chartText, font:{size:12,weight:600}}, ticks:{color: T().chartText, font:{size:11}}, grid:{color: T().chartGrid} },
+                    y: { title:{display:true, text:'Principal Component 2', color: T().chartText, font:{size:12,weight:600}}, ticks:{color: T().chartText, font:{size:11}}, grid:{color: T().chartGrid} }
+                }
+            }
+        });
+
+        if (container) container.style.display = '';
+    })
+    .catch(e => { alert('Failed to load scatter data: ' + e); if (placeholder) placeholder.classList.remove('d-none'); })
+    .finally(() => {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh'; }
+        if (loading) loading.classList.add('d-none');
+    });
+}
+</script>
+{% endblock %}

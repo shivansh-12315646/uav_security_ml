@@ -57,23 +57,42 @@ class TrainingService:
         try:
             df = pd.read_csv(file_path)
 
-            required_cols = ['packet_size', 'inter_arrival_time', 'packet_rate',
-                             'connection_duration', 'failed_logins', 'label']
+            # Auto-detect feature columns (support both UAV and legacy schemas)
+            uav_cols = ['altitude', 'speed', 'direction', 'signal_strength',
+                        'distance_from_base', 'flight_time', 'battery_level',
+                        'temperature', 'vibration', 'gps_accuracy']
+            legacy_cols = ['packet_size', 'inter_arrival_time', 'packet_rate',
+                          'connection_duration', 'failed_logins']
 
-            missing_cols = [col for col in required_cols if col not in df.columns]
-            if missing_cols:
+            if all(c in df.columns for c in uav_cols):
+                feature_cols = uav_cols
+            elif all(c in df.columns for c in legacy_cols):
+                feature_cols = legacy_cols
+            else:
                 return {
                     'success': False,
-                    'error': f'Missing required columns: {missing_cols}'
+                    'error': f'Dataset must contain UAV features {uav_cols} or legacy features {legacy_cols}'
                 }
+
+            # Detect label column
+            label_col = None
+            for lc in ['threat_type', 'label', 'is_threat']:
+                if lc in df.columns:
+                    label_col = lc
+                    break
+
+            label_counts = {}
+            if label_col:
+                label_counts = df[label_col].value_counts().to_dict()
 
             stats = {
                 'success': True,
                 'total_samples': len(df),
-                'features': len(df.columns) - 1,
-                'normal_samples': len(df[df['label'] == 'normal']),
-                'attack_samples': len(df[df['label'] == 'attack']),
-                'feature_stats': df.describe().to_dict(),
+                'features': len(feature_cols),
+                'feature_columns': feature_cols,
+                'label_column': label_col,
+                'label_distribution': {str(k): int(v) for k, v in label_counts.items()},
+                'feature_stats': df[feature_cols].describe().to_dict(),
                 'null_values': df.isnull().sum().to_dict()
             }
 
@@ -116,10 +135,34 @@ class TrainingService:
             df = pd.read_csv(dataset_path)
 
             self._emit_progress('training_update', {'stage': 'preprocessing', 'progress': 20, 'message': 'Preprocessing features...'})
-            feature_columns = ['packet_size', 'inter_arrival_time', 'packet_rate',
-                               'connection_duration', 'failed_logins']
+
+            # Auto-detect feature columns
+            uav_cols = ['altitude', 'speed', 'direction', 'signal_strength',
+                        'distance_from_base', 'flight_time', 'battery_level',
+                        'temperature', 'vibration', 'gps_accuracy']
+            legacy_cols = ['packet_size', 'inter_arrival_time', 'packet_rate',
+                          'connection_duration', 'failed_logins']
+
+            if all(c in df.columns for c in uav_cols):
+                feature_columns = uav_cols
+            elif all(c in df.columns for c in legacy_cols):
+                feature_columns = legacy_cols
+            else:
+                raise ValueError('Dataset does not contain recognized feature columns')
+
             X = df[feature_columns]
-            y = df['label'].map({'normal': 0, 'attack': 1})
+
+            # Auto-detect and encode labels
+            if 'threat_type' in df.columns:
+                from sklearn.preprocessing import LabelEncoder
+                le = LabelEncoder()
+                y = pd.Series(le.fit_transform(df['threat_type']))
+            elif 'label' in df.columns:
+                y = df['label'].map({'normal': 0, 'attack': 1})
+            elif 'is_threat' in df.columns:
+                y = df['is_threat']
+            else:
+                raise ValueError('Dataset must contain a label column (threat_type, label, or is_threat)')
 
             self._emit_progress('training_update', {
                 'stage': 'splitting', 'progress': 30,

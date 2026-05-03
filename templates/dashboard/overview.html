@@ -1,3 +1,4 @@
+{# filepath: c:\Users\Shivansh Sharma\Downloads\uav_security_ml\templates\dashboard\overview.html #}
 {% extends "base.html" %}
 
 {% block title %}Dashboard - UAV Security ML{% endblock %}
@@ -16,7 +17,7 @@
                         <small>Threat Rate</small>
                     </div>
                 </div>
-                <p class="mb-0 mt-3 text-muted">Last updated: <span id="last-update">{{ "now"|default:"Just now" }}</span></p>
+                <p class="mb-0 mt-3 text-muted">Last updated: <span id="last-update">Just now</span></p>
             </div>
         </div>
     </div>
@@ -38,23 +39,58 @@
     {% endwith %}
 </div>
 
+<!-- Unsupervised Analysis Summary -->
+{% if kmeans_k %}
+<div class="row mb-4" data-aos="fade-up">
+    <div class="col-12">
+        <div class="card" style="border-left: 4px solid #8b5cf6;">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-3 text-center">
+                        <i class="fas fa-project-diagram fa-2x text-purple mb-2" style="color: #8b5cf6;"></i>
+                        <h6 class="mb-0">Unsupervised ML</h6>
+                    </div>
+                    <div class="col-md-2 text-center">
+                        <h4 class="mb-0">{{ kmeans_k }}</h4>
+                        <small class="text-muted">Clusters</small>
+                    </div>
+                    <div class="col-md-2 text-center">
+                        <h4 class="mb-0">{{ anomaly_count }}</h4>
+                        <small class="text-muted">Anomalies</small>
+                    </div>
+                    <div class="col-md-2 text-center">
+                        <h4 class="mb-0">{{ silhouette }}</h4>
+                        <small class="text-muted">Silhouette</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <a href="{% url 'unsupervised_dashboard' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-right"></i> View Analysis
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Charts and Visualizations Row -->
 <div class="row mb-4">
     <!-- Detection Trend Chart -->
     <div class="col-lg-8" data-aos="fade-right">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-chart-area"></i> Detection Trend (Last 7 Days)</h5>
-                <div class="btn-group btn-group-sm" role="group">
-                    <button type="button" class="btn btn-outline-primary active">7 Days</button>
-                    <button type="button" class="btn btn-outline-primary">30 Days</button>
-                    <button type="button" class="btn btn-outline-primary">90 Days</button>
+                <h5 class="mb-0"><i class="fas fa-chart-area"></i> Detection Trend (<span id="trend-title">Last 7 Days</span>)</h5>
+                <div class="btn-group btn-group-sm" role="group" id="trend-range-buttons">
+                    <button type="button" class="btn btn-outline-primary active" data-days="7">7 Days</button>
+                    <button type="button" class="btn btn-outline-primary" data-days="30">30 Days</button>
+                    <button type="button" class="btn btn-outline-primary" data-days="90">90 Days</button>
                 </div>
             </div>
             <div class="card-body">
                 {% if total_detections > 0 %}
-                <div class="chart-container">
-                    <canvas id="detectionTrendChart" height="80"></canvas>
+                <div class="chart-container" style="position: relative; height: 260px;">
+                    <canvas id="detectionTrendChart"></canvas>
                 </div>
                 {% else %}
                 <div class="text-center text-muted py-5">
@@ -66,7 +102,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Model Info & Quick Actions -->
     <div class="col-lg-4" data-aos="fade-left">
         <div class="card mb-3">
@@ -76,8 +112,10 @@
             <div class="card-body">
                 {% if active_model %}
                 <div class="text-center mb-3">
-                    <div class="circular-progress" style="--progress: {% widthratio active_model.accuracy 1 100 %}%">
-                        <div class="circular-progress-text">{% if active_model.accuracy %}{% widthratio active_model.accuracy 1 100 %}{% else %}N/A{% endif %}%</div>
+                    <div class="circular-progress" style="--progress: {{ active_model.accuracy|default:0|floatformat:2 }}%;">
+                        <div class="circular-progress-text">
+                            {% if active_model.accuracy != None %}{{ active_model.accuracy|floatformat:2 }}{% else %}N/A{% endif %}%
+                        </div>
                     </div>
                     <p class="mt-2 mb-0"><strong>Accuracy</strong></p>
                 </div>
@@ -88,7 +126,13 @@
                     </tr>
                     <tr>
                         <th>Accuracy:</th>
-                        <td>{% if active_model.accuracy %}{% widthratio active_model.accuracy 1 100 %}%{% else %}N/A{% endif %}</td>
+                        <td>
+                            {% if active_model.accuracy != None %}
+                                {{ active_model.accuracy|floatformat:2 }}%
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
                     </tr>
                     <tr>
                         <th>Version:</th>
@@ -108,7 +152,7 @@
                 {% endif %}
             </div>
         </div>
-        
+
         <!-- Quick Actions -->
         <div class="card" data-aos="fade-up" data-aos-delay="100">
             <div class="card-header">
@@ -171,14 +215,13 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="progress flex-grow-1 me-2" style="height: 8px;">
-                                            <div class="progress-bar {% if detection.confidence > 0.8 %}bg-success{% elif detection.confidence > 0.5 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                            <div class="progress-bar {% if detection.confidence > 0.8 %}bg-success{% elif detection.confidence > 0.5 %}bg-warning{% else %}bg-danger{% endif %}"
                                                  style="width: {% widthratio detection.confidence 1 100 %}%"></div>
                                         </div>
                                         <small>{% widthratio detection.confidence 1 100 %}%</small>
                                     </div>
                                 </td>
                                 <td>
-                                    
                                     {% include "components/alert_badge.html" with severity=detection.threat_level %}
                                 </td>
                                 <td>
@@ -201,7 +244,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Recent Alerts & Live Feed -->
     <div class="col-lg-4" data-aos="fade-up" data-aos-delay="100">
         <div class="card mb-3">
@@ -231,7 +274,7 @@
                 {% endfor %}
             </div>
         </div>
-        
+
         <!-- Live Detection Feed -->
         <div class="card" data-aos="fade-up" data-aos-delay="200">
             <div class="card-header">
@@ -253,110 +296,117 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-// Initialize detection trend chart with enhanced styling
-{{ detection_trend|json_script:"trend-data" }}
-        const trendData = JSON.parse(document.getElementById("trend-data").textContent);
+{{ detection_trend|json_script:"trend-data-7" }}
+{{ detection_trend_30|json_script:"trend-data-30" }}
+{{ detection_trend_90|json_script:"trend-data-90" }}
 
-if (window.chartUtils && typeof window.chartUtils.createDetectionTrendChart === 'function') {
-    window.chartUtils.createDetectionTrendChart('detectionTrendChart', trendData);
-} else {
-    // Fallback to basic Chart.js
-    const ctx = document.getElementById('detectionTrendChart');
-    if (ctx) {
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: trendData.map(d => d.date),
-                datasets: [{
-                    label: 'Detections',
-                    data: trendData.map(d => d.count),
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    pointBackgroundColor: '#3b82f6',
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2
-                }]
+<script>
+function readTrend(days) {
+    try {
+        const el = document.getElementById(`trend-data-${days}`);
+        return JSON.parse(el?.textContent || "[]");
+    } catch (e) {
+        return [];
+    }
+}
+
+function renderTrendChart(days) {
+    const trendData = readTrend(days);
+    const canvas = document.getElementById('detectionTrendChart');
+    if (!canvas || !window.Chart) return;
+
+    if (window.detectionTrendChartInstance) {
+        window.detectionTrendChartInstance.destroy();
+    }
+
+    const T = () => window.UAVTheme?.getChartColors?.() || {
+        chartText: '#94a3b8', chartGrid: 'rgba(99,102,241,0.08)',
+        tooltipBg: 'rgba(15,23,42,0.95)', tooltipTitle: '#f8fafc', tooltipBody: '#cbd5e1'
+    };
+
+    window.detectionTrendChartInstance = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: trendData.map(d => d.date),
+            datasets: [{
+                label: 'Detections',
+                data: trendData.map(d => d.count),
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4,
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#3b82f6',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: T().tooltipBg,
+                    titleColor: T().tooltipTitle,
+                    bodyColor: T().tooltipBody,
+                    borderColor: 'rgba(59, 130, 246, 0.5)',
+                    borderWidth: 1,
+                    padding: 12
+                }
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                        backgroundColor: 'rgba(30, 41, 59, 0.95)',
-                        titleColor: '#f8fafc',
-                        bodyColor: '#cbd5e1',
-                        borderColor: 'rgba(59, 130, 246, 0.5)',
-                        borderWidth: 1,
-                        padding: 12
-                    }
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: T().chartGrid, drawBorder: false },
+                    ticks: { color: T().chartText, padding: 10 }
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(59, 130, 246, 0.1)',
-                            drawBorder: false
-                        },
-                        ticks: {
-                            color: '#cbd5e1',
-                            padding: 10
-                        }
-                    },
-                    x: {
-                        grid: { display: false },
-                        ticks: {
-                            color: '#cbd5e1',
-                            padding: 10
-                        }
-                    }
+                x: {
+                    grid: { display: false },
+                    ticks: { color: T().chartText, padding: 10 }
                 }
             }
+        }
+    });
+
+    const title = document.getElementById('trend-title');
+    if (title) title.textContent = `Last ${days} Days`;
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    renderTrendChart(7);
+
+    const group = document.getElementById('trend-range-buttons');
+    if (group) {
+        group.querySelectorAll('button[data-days]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                group.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                renderTrendChart(parseInt(btn.dataset.days, 10));
+            });
         });
     }
-}
 
-// Initialize circular progress for model accuracy
-document.addEventListener('DOMContentLoaded', function() {
     const circularProgress = document.querySelector('.circular-progress');
     if (circularProgress && window.dashboardUtils) {
-        const percentage = parseInt(circularProgress.style.getPropertyValue('--progress'));
+        const raw = parseFloat(circularProgress.style.getPropertyValue('--progress'));
+        const percentage = Number.isFinite(raw) ? Math.max(0, Math.min(raw, 100)) : 0;
+
+        // no rounding to integer
         window.dashboardUtils.createCircularProgress(circularProgress, percentage);
+
+        const txt = circularProgress.querySelector('.circular-progress-text');
+        if (txt) txt.textContent = `${percentage.toFixed(2)}%`;
     }
-    
-    // Update last update time
-    setInterval(function() {
+
+    setInterval(function () {
         const now = new Date();
-        document.getElementById('last-update').textContent = now.toLocaleTimeString();
-    }, 60000); // Update every minute
+        const lastUpdateEl = document.getElementById('last-update');
+        if (lastUpdateEl) lastUpdateEl.textContent = now.toLocaleTimeString();
+    }, 60000);
 });
-
-// View detection details
-function viewDetectionDetails(detectionId) {
-    if (window.dashboardUtils) {
-        window.dashboardUtils.showToast('Viewing detection #' + detectionId, 'info');
-    }
-    // TODO: Open modal with detection details
-}
-
-// Export report function
-function exportReport() {
-    if (window.dashboardUtils) {
-        window.dashboardUtils.showToast('Generating report...', 'info');
-    }
-    // TODO: Implement report export
-    setTimeout(() => {
-        if (window.dashboardUtils) {
-            window.dashboardUtils.showToast('Report exported successfully!', 'success');
-        }
-    }, 2000);
-}
 </script>
 {% endblock %}

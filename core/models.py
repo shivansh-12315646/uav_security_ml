@@ -268,3 +268,70 @@ class MLModel(models.Model):
 
     def __str__(self):
         return f'{self.name} v{self.version}'
+
+
+class DroneDevice(models.Model):
+    """Registered drone device that connects to the system."""
+    STATUS_CHOICES = [
+        ('online', 'Online'),
+        ('offline', 'Offline'),
+        ('warning', 'Warning'),
+    ]
+
+    name = models.CharField(max_length=100, unique=True)
+    api_key = models.CharField(max_length=64, unique=True, db_index=True)
+    description = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='offline')
+    registered_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='registered_drones'
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+    last_seen = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'drone_devices'
+        ordering = ['-last_seen']
+
+    def __str__(self):
+        return f'{self.name} ({self.status})'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'status': self.status,
+            'description': self.description,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'last_seen': self.last_seen.isoformat() if self.last_seen else None,
+        }
+
+
+class DroneTelemetry(models.Model):
+    """Telemetry data received from a connected drone."""
+    device = models.ForeignKey(
+        DroneDevice, on_delete=models.CASCADE, related_name='telemetry', db_index=True
+    )
+    timestamp = models.DateTimeField(default=timezone.now, db_index=True)
+
+    altitude = models.FloatField()
+    speed = models.FloatField()
+    direction = models.FloatField()
+    signal_strength = models.FloatField()
+    distance_from_base = models.FloatField()
+    flight_time = models.FloatField()
+    battery_level = models.FloatField()
+    temperature = models.FloatField()
+    vibration = models.FloatField()
+    gps_accuracy = models.FloatField()
+
+    prediction = models.CharField(max_length=50)
+    confidence = models.FloatField()
+    threat_level = models.CharField(max_length=20, blank=True, null=True)
+    is_threat = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'drone_telemetry'
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f'Telemetry {self.id}: {self.device.name} - {self.prediction}'

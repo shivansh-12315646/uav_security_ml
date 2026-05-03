@@ -4,7 +4,7 @@
 {% block page_title %}Advanced Analytics Dashboard{% endblock %}
 
 {% block content %}
-<!-- Analytics Header with Date Range Selector -->
+<!-- Analytics Header -->
 <div class="row mb-4" data-aos="fade-down">
     <div class="col-md-12">
         <div class="card">
@@ -12,18 +12,12 @@
                 <div class="row align-items-center">
                     <div class="col-md-8">
                         <h4 class="mb-0"><i class="fas fa-chart-line"></i> Analytics Overview</h4>
-                        <p class="text-muted mb-0">Comprehensive insights into threat detection patterns</p>
+                        <p class="text-muted mb-0">Detection patterns &amp; unsupervised analysis insights</p>
                     </div>
-                    <div class="col-md-4">
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-calendar"></i></span>
-                            <select class="form-select" id="dateRange">
-                                <option value="7">Last 7 Days</option>
-                                <option value="30" selected>Last 30 Days</option>
-                                <option value="90">Last 90 Days</option>
-                                <option value="custom">Custom Range</option>
-                            </select>
-                        </div>
+                    <div class="col-md-4 text-end">
+                        <a href="{% url 'unsupervised_dashboard' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-project-diagram"></i> Unsupervised Analysis
+                        </a>
                     </div>
                 </div>
             </div>
@@ -31,67 +25,49 @@
     </div>
 </div>
 
-<!-- Key Metrics Row -->
+<!-- Key Metrics -->
 <div class="row mb-4">
-    <div class="col-md-3" data-aos="fade-up" data-aos-delay="0">
+    <div class="col-md-4" data-aos="fade-up">
         <div class="card metric-card info">
             <div class="card-body text-center">
                 <i class="fas fa-chart-line fa-2x mb-3 text-primary"></i>
-                <h3 class="mb-1">127</h3>
+                <h3 class="mb-1">{{ total_detections }}</h3>
                 <p class="text-muted mb-0">Total Detections</p>
-                <small class="text-success"><i class="fas fa-arrow-up"></i> +12% from last period</small>
             </div>
         </div>
     </div>
-    <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
+    <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
         <div class="card metric-card danger">
             <div class="card-body text-center">
                 <i class="fas fa-exclamation-triangle fa-2x mb-3 text-danger"></i>
-                <h3 class="mb-1">23</h3>
+                <h3 class="mb-1">{{ total_threats }}</h3>
                 <p class="text-muted mb-0">Threats Detected</p>
-                <small class="text-danger"><i class="fas fa-arrow-up"></i> +8% from last period</small>
             </div>
         </div>
     </div>
-    <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
+    <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
         <div class="card metric-card safe">
             <div class="card-body text-center">
                 <i class="fas fa-percentage fa-2x mb-3 text-success"></i>
-                <h3 class="mb-1">94.2%</h3>
-                <p class="text-muted mb-0">Detection Accuracy</p>
-                <small class="text-success"><i class="fas fa-arrow-up"></i> +2.1% from last period</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
-        <div class="card metric-card warning">
-            <div class="card-body text-center">
-                <i class="fas fa-clock fa-2x mb-3 text-warning"></i>
-                <h3 class="mb-1">1.2s</h3>
-                <p class="text-muted mb-0">Avg Detection Time</p>
-                <small class="text-success"><i class="fas fa-arrow-down"></i> -0.3s faster</small>
+                <h3 class="mb-1">{{ avg_confidence }}%</h3>
+                <p class="text-muted mb-0">Avg Confidence</p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Charts Row 1 -->
+<!-- Charts Row -->
 <div class="row mb-4">
     <div class="col-lg-8" data-aos="fade-right">
         <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-chart-area"></i> Detection Trends</h5>
-                <div class="btn-group btn-group-sm" role="group">
-                    <button type="button" class="btn btn-outline-primary active" data-chart-type="line">Line</button>
-                    <button type="button" class="btn btn-outline-primary" data-chart-type="bar">Bar</button>
-                </div>
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-area"></i> Detection Timeline</h5>
             </div>
             <div class="card-body">
                 <canvas id="trendChart" height="80"></canvas>
             </div>
         </div>
     </div>
-    
     <div class="col-lg-4" data-aos="fade-left">
         <div class="card">
             <div class="card-header">
@@ -104,23 +80,23 @@
     </div>
 </div>
 
-<!-- Charts Row 2 -->
+{% if has_unsupervised %}
+<!-- Unsupervised Insights Row -->
 <div class="row mb-4">
     <div class="col-lg-6" data-aos="fade-up">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-fire"></i> Hourly Activity Heatmap</h5>
+                <h5 class="mb-0"><i class="fas fa-layer-group"></i> K-Means Cluster Sizes</h5>
             </div>
             <div class="card-body">
-                <canvas id="hourlyActivityChart" height="120"></canvas>
+                <canvas id="clusterBarChart" height="120"></canvas>
             </div>
         </div>
     </div>
-    
     <div class="col-lg-6" data-aos="fade-up" data-aos-delay="100">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-robot"></i> Model Performance</h5>
+                <h5 class="mb-0"><i class="fas fa-robot"></i> Model Performance Radar</h5>
             </div>
             <div class="card-body">
                 <canvas id="modelPerfChart" height="120"></canvas>
@@ -128,419 +104,141 @@
         </div>
     </div>
 </div>
-
-<!-- Top Threats Table -->
-<div class="row mb-4">
-    <div class="col-lg-12" data-aos="fade-up">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-ranking-star"></i> Top Threat Patterns</h5>
-                <button class="btn btn-sm btn-outline-primary" onclick="exportData('threats')">
-                    <i class="fas fa-download"></i> Export
-                </button>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Pattern Type</th>
-                                <th>Occurrences</th>
-                                <th>Severity</th>
-                                <th>First Seen</th>
-                                <th>Last Seen</th>
-                                <th>Trend</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td><i class="fas fa-network-wired"></i> High Packet Rate</td>
-                                <td><span class="badge bg-danger">12</span></td>
-                                <td>{% include "components/alert_badge.html" with severity="High" %}</td>
-                                <td>2024-01-15</td>
-                                <td>2024-01-20</td>
-                                <td><i class="fas fa-arrow-up text-danger"></i> +25%</td>
-                            </tr>
-                            <tr>
-                                <td>2</td>
-                                <td><i class="fas fa-clock"></i> Abnormal Timing</td>
-                                <td><span class="badge bg-warning">8</span></td>
-                                <td>{% include "components/alert_badge.html" with severity="High" %}</td>
-                                <td>2024-01-16</td>
-                                <td>2024-01-19</td>
-                                <td><i class="fas fa-arrow-down text-success"></i> -12%</td>
-                            </tr>
-                            <tr>
-                                <td>3</td>
-                                <td><i class="fas fa-user-lock"></i> Failed Auth Attempts</td>
-                                <td><span class="badge bg-info">5</span></td>
-                                <td>{% include "components/alert_badge.html" with severity="High" %}</td>
-                                <td>2024-01-18</td>
-                                <td>2024-01-20</td>
-                                <td><i class="fas fa-minus text-muted"></i> 0%</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Export Options -->
-<div class="row" data-aos="fade-up">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-file-export"></i> Export Analytics</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        <button class="btn btn-outline-primary w-100 mb-2" onclick="exportData('pdf')">
-                            <i class="fas fa-file-pdf"></i> Export as PDF
-                        </button>
-                    </div>
-                    <div class="col-md-4">
-                        <button class="btn btn-outline-success w-100 mb-2" onclick="exportData('csv')">
-                            <i class="fas fa-file-csv"></i> Export as CSV
-                        </button>
-                    </div>
-                    <div class="col-md-4">
-                        <button class="btn btn-outline-info w-100 mb-2" onclick="exportData('json')">
-                            <i class="fas fa-file-code"></i> Export as JSON
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
+{{ threat_dist_json|json_script:"threat-dist-data" }}
+{{ unsupervised_json|json_script:"unsupervised-data" }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📊 Initializing analytics charts...');
-    
-    // Check if Chart.js is loaded
-    if (typeof Chart === 'undefined') {
-        console.error('❌ Chart.js not loaded! ');
-        return;
-    }
-    
-    // ============================================
-    // 1.  DETECTION TREND CHART
-    // ============================================
+    if (typeof Chart === 'undefined') return;
+
+    const palette = ['#6366f1','#06b6d4','#f59e0b','#ec4899','#10b981','#8b5cf6','#f97316','#14b8a6'];
+    const T = () => window.UAVTheme?.getChartColors?.() || {chartText:'#94a3b8',chartGrid:'rgba(99,102,241,0.08)'};
+    const threatDist = JSON.parse(document.getElementById('threat-dist-data')?.textContent || '[]');
+    const unsup = JSON.parse(document.getElementById('unsupervised-data')?.textContent || '{}');
+
+    // ── Detection Timeline ──
     const trendCtx = document.getElementById('trendChart');
-    let trendChart = null;
-    
     if (trendCtx) {
-        // Generate 30 days of data
-        const last30Days = Array.from({length: 30}, (_, i) => {
-            const date = new Date();
-            date.setDate(date.getDate() - (29 - i));
-            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        });
-        
-        const detectionData = Array.from({length: 30}, () => Math.floor(Math.random() * 10) + 2);
-        const threatData = Array.from({length: 30}, () => Math.floor(Math.random() * 5));
-        
-        trendChart = new Chart(trendCtx, {
-            type: 'line',
-            data: {
-                labels: last30Days,
-                datasets: [{
-                    label:  'Total Detections',
-                    data: detectionData,
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    borderWidth: 2
-                }, {
-                    label: 'Threats',
-                    data: threatData,
-                    borderColor:  '#ef4444',
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio:  true,
-                plugins: {
-                    legend: { 
-                        labels: { color: '#cbd5e1' }
+        fetch('{% url "detection_timeline" %}?days=30')
+            .then(r => r.json())
+            .then(data => {
+                const dates = [...new Set(data.map(d => d.date))].sort();
+                const counts = dates.map(date => data.filter(d => d.date === date).reduce((s, d) => s + d.count, 0));
+                const gradient = trendCtx.getContext('2d').createLinearGradient(0, 0, 0, 300);
+                gradient.addColorStop(0, 'rgba(99,102,241,0.35)');
+                gradient.addColorStop(1, 'rgba(99,102,241,0.02)');
+                new Chart(trendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Detections', data: counts,
+                            borderColor: '#6366f1', backgroundColor: gradient,
+                            fill: true, tension: 0.4, borderWidth: 3,
+                            pointBackgroundColor: '#6366f1', pointBorderColor: '#fff',
+                            pointBorderWidth: 2, pointRadius: 5, pointHoverRadius: 8,
+                        }]
                     },
-                    tooltip: {
-                        backgroundColor: 'rgba(30, 41, 59, 0.95)',
-                        titleColor: '#f8fafc',
-                        bodyColor: '#cbd5e1'
+                    options: {
+                        responsive: true, interaction: {intersect: false, mode: 'index'},
+                        plugins: {legend: {labels: {color: T().chartText, font: {family: "'Inter'", weight: 600, size: 12}}}},
+                        scales: {
+                            y: {beginAtZero: true, ticks: {color: T().chartText, font: {size: 12, weight: 500}}, grid: {color: T().chartGrid}},
+                            x: {ticks: {color: T().chartText, maxRotation: 45, font: {size: 11}}, grid: {display: false}}
+                        }
                     }
-                },
-                scales:  {
-                    y: { 
-                        beginAtZero:  true,
-                        ticks:  { color: '#cbd5e1' },
-                        grid: { color: 'rgba(59, 130, 246, 0.1)' }
-                    },
-                    x: { 
-                        ticks: { 
-                            color: '#cbd5e1',
-                            maxRotation: 45,
-                            minRotation: 45
-                        },
-                        grid: { display: false }
-                    }
-                }
-            }
-        });
-        console.log('✅ Detection Trends chart created');
+                });
+            }).catch(() => {});
     }
-    
-    // ============================================
-    // 2. THREAT DISTRIBUTION CHART (Doughnut)
-    // ============================================
-    const threatDistCtx = document.getElementById('threatDistChart');
-    if (threatDistCtx) {
-        new Chart(threatDistCtx, {
+
+    // ── Threat Distribution (Doughnut) ──
+    const distCtx = document.getElementById('threatDistChart');
+    if (distCtx && threatDist.length) {
+        new Chart(distCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Normal', 'GPS Spoofing', 'Jamming', 'Tampering', 'Unauthorized'],
+                labels: threatDist.map(d => d.prediction),
                 datasets: [{
-                    data: [14000, 2400, 1800, 1200, 600],
-                    backgroundColor: [
-                        '#10b981', // Green - Normal
-                        '#ef4444', // Red - GPS Spoofing
-                        '#f59e0b', // Orange - Jamming
-                        '#8b5cf6', // Purple - Tampering
-                        '#6366f1'  // Blue - Unauthorized
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#1e293b'
+                    data: threatDist.map(d => d.count),
+                    backgroundColor: palette.slice(0, threatDist.length),
+                    borderWidth: 3, borderColor: 'transparent',
+                    hoverBorderColor: '#fff', hoverOffset: 8,
                 }]
             },
             options: {
-                responsive:  true,
-                maintainAspectRatio: false,
+                responsive: true, maintainAspectRatio: false, cutout: '65%',
                 plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { 
-                            color: '#cbd5e1',
-                            padding: 15,
-                            font: { size: 11 }
-                        }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(30, 41, 59, 0.95)',
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.parsed || 0;
-                                const total = context.dataset.data. reduce((a, b) => a + b, 0);
-                                const percentage = ((value / total) * 100).toFixed(1);
-                                return `${label}: ${value} (${percentage}%)`;
-                            }
-                        }
-                    }
+                    legend: {position: 'bottom', labels: {color: T().chartText, padding: 16, font: {family: "'Inter'", size: 12, weight: 500}, usePointStyle: true, pointStyleWidth: 12}},
                 }
             }
         });
-        console.log('✅ Threat Distribution chart created');
     }
-    
-    // ============================================
-    // 3. HOURLY ACTIVITY CHART (Bar)
-    // ============================================
-    const hourlyCtx = document.getElementById('hourlyActivityChart');
-    if (hourlyCtx) {
-        const hourLabels = Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00`);
-        const hourlyData = Array. from({length: 24}, () => Math.floor(Math.random() * 15) + 1);
-        
-        new Chart(hourlyCtx, {
+
+    // ── K-Means Cluster Sizes (Bar) ──
+    const clusterCtx = document.getElementById('clusterBarChart');
+    if (clusterCtx && unsup.kmeans) {
+        const sizes = unsup.kmeans.cluster_sizes || {};
+        const keys = Object.keys(sizes);
+        const gradients = keys.map((_, i) => {
+            const g = clusterCtx.getContext('2d').createLinearGradient(0, 0, 0, 300);
+            const c = palette[i % palette.length];
+            g.addColorStop(0, c); g.addColorStop(1, c + '33');
+            return g;
+        });
+        new Chart(clusterCtx, {
             type: 'bar',
             data: {
-                labels: hourLabels,
-                datasets: [{
-                    label: 'Detections',
-                    data: hourlyData,
-                    backgroundColor:  hourlyData.map(val => {
-                        if (val > 12) return '#ef4444'; // High - Red
-                        if (val > 8) return '#f59e0b';  // Medium - Orange
-                        return '#3b82f6';               // Low - Blue
-                    }),
-                    borderRadius: 4
-                }]
+                labels: keys.map(k => 'Cluster ' + k),
+                datasets: [{label: 'Samples', data: Object.values(sizes), backgroundColor: gradients, borderRadius: 8, borderSkipped: false}]
             },
             options: {
-                responsive:  true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend:  { display: false },
-                    tooltip:  {
-                        backgroundColor: 'rgba(30, 41, 59, 0.95)'
-                    }
-                },
+                responsive: true, plugins: {legend: {display: false}},
                 scales: {
-                    y: {
-                        beginAtZero:  true,
-                        ticks:  { color: '#cbd5e1' },
-                        grid: { color: 'rgba(59, 130, 246, 0.1)' }
-                    },
-                    x: {
-                        ticks: { 
-                            color: '#cbd5e1',
-                            maxRotation: 90,
-                            minRotation:  45,
-                            font: { size: 9 }
-                        },
-                        grid: { display: false }
-                    }
+                    y: {beginAtZero: true, ticks: {color: T().chartText, font: {size: 12, weight: 500}}, grid: {color: T().chartGrid}},
+                    x: {ticks: {color: T().chartText, font: {size: 12, weight: 600}}, grid: {display: false}}
                 }
             }
         });
-        console.log('✅ Hourly Activity chart created');
     }
-    
-    // ============================================
-    // 4. MODEL PERFORMANCE CHART (Radar)
-    // ============================================
-    const modelPerfCtx = document.getElementById('modelPerfChart');
-    if (modelPerfCtx) {
-        new Chart(modelPerfCtx, {
+
+    // ── Model Performance Radar ──
+    const radarCtx = document.getElementById('modelPerfChart');
+    if (radarCtx && unsup.kmeans) {
+        const km = unsup.kmeans?.metrics || {};
+        new Chart(radarCtx, {
             type: 'radar',
             data: {
-                labels: ['Accuracy', 'Precision', 'Recall', 'F1-Score', 'Speed'],
+                labels: ['Silhouette', 'Anomaly Det.', 'PCA Variance', 'Clusters', 'Speed'],
                 datasets: [{
-                    label: 'Random Forest',
-                    data: [100, 99, 100, 99.5, 85],
-                    borderColor: '#10b981',
-                    backgroundColor:  'rgba(16, 185, 129, 0.2)',
-                    pointBackgroundColor: '#10b981',
-                    pointBorderColor: '#fff',
-                    pointHoverBackgroundColor: '#fff',
-                    pointHoverBorderColor: '#10b981'
-                }, {
-                    label: 'XGBoost',
-                    data: [99.95, 99.8, 99.9, 99.85, 95],
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                    pointBackgroundColor: '#3b82f6',
-                    pointBorderColor: '#fff',
-                    pointHoverBackgroundColor:  '#fff',
-                    pointHoverBorderColor: '#3b82f6'
-                }, {
-                    label: 'SVM',
-                    data: [99.5, 98.5, 99, 98.75, 70],
-                    borderColor: '#f59e0b',
-                    backgroundColor: 'rgba(245, 158, 11, 0.2)',
-                    pointBackgroundColor: '#f59e0b',
-                    pointBorderColor: '#fff',
-                    pointHoverBackgroundColor: '#fff',
-                    pointHoverBorderColor: '#f59e0b'
+                    label: 'Unsupervised',
+                    data: [
+                        (km.silhouette_score || 0) * 100,
+                        unsup.isolation_forest?.anomaly_rate || 0,
+                        (unsup.pca?.total_explained_variance || 0) * 100,
+                        Math.min((km.n_clusters || 0) * 15, 100),
+                        85
+                    ],
+                    borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.15)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#8b5cf6', pointBorderColor: '#fff',
+                    pointBorderWidth: 2, pointRadius: 5, pointHoverRadius: 8,
                 }]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { color: '#cbd5e1' }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(30, 41, 59, 0.95)'
-                    }
-                },
-                scales: {
-                    r: {
-                        beginAtZero: true,
-                        max: 100,
-                        ticks: { 
-                            color: '#cbd5e1',
-                            backdropColor: 'transparent'
-                        },
-                        grid: { color:  'rgba(203, 213, 225, 0.2)' },
-                        pointLabels: { 
-                            color: '#cbd5e1',
-                            font: { size: 11 }
-                        }
-                    }
-                }
+                plugins: {legend: {labels: {color: T().chartText, font: {family: "'Inter'", size: 12, weight: 600}}}},
+                scales: {r: {
+                    beginAtZero: true, max: 100,
+                    ticks: {color: T().chartText, backdropColor: 'transparent', font: {size: 10}},
+                    grid: {color: T().chartGrid},
+                    pointLabels: {color: T().chartText, font: {family: "'Inter'", size: 13, weight: 600}},
+                }}
             }
         });
-        console.log('✅ Model Performance chart created');
     }
-    
-    // ============================================
-    // CHART TYPE SWITCHER
-    // ============================================
-    document.querySelectorAll('[data-chart-type]').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const chartType = this.getAttribute('data-chart-type');
-            
-            // Update active button
-            this.parentElement.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Update chart type
-            if (trendChart) {
-                trendChart.config. type = chartType;
-                trendChart.update();
-                console.log(`📊 Chart type changed to: ${chartType}`);
-            }
-        });
-    });
-    
-    console.log('✅ All analytics charts initialized successfully!');
 });
-
-// ============================================
-// EXPORT FUNCTION (Global)
-// ============================================
-function exportData(format) {
-    console.log(`📥 Exporting data as ${format}...`);
-    
-    // Show toast notification
-    const toastHTML = `
-        <div class="toast align-items-center text-white bg-info border-0 position-fixed bottom-0 end-0 m-3" role="alert" style="z-index: 9999;">
-            <div class="d-flex">
-                <div class="toast-body">Exporting analytics as ${format. toUpperCase()}...</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', toastHTML);
-    const toastElement = document.querySelector('.toast:last-child');
-    
-    if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
-        const toast = new bootstrap.Toast(toastElement, { delay: 2000 });
-        toast.show();
-        
-        setTimeout(() => {
-            const successToast = `
-                <div class="toast align-items-center text-white bg-success border-0 position-fixed bottom-0 end-0 m-3" role="alert" style="z-index: 9999;">
-                    <div class="d-flex">
-                        <div class="toast-body">✅ Analytics exported successfully!</div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', successToast);
-            const successToastEl = document.querySelector('.toast:last-child');
-            new bootstrap.Toast(successToastEl, { delay: 3000 }).show();
-        }, 2000);
-    }
-    
-    // TODO: Implement actual export logic
-    // This would typically send a request to the backend
-}
 </script>
 {% endblock %}

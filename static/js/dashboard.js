@@ -18,72 +18,25 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof particlesJS !== 'undefined' && document.getElementById('particles-js')) {
         particlesJS('particles-js', {
             particles: {
-                number: {
-                    value: 80,
-                    density: {
-                        enable: true,
-                        value_area: 800
-                    }
-                },
-                color: {
-                    value: '#3b82f6'
-                },
-                shape: {
-                    type: 'circle'
-                },
-                opacity: {
-                    value: 0.3,
-                    random: true
-                },
-                size: {
-                    value: 3,
-                    random: true
-                },
-                line_linked: {
-                    enable: true,
-                    distance: 150,
-                    color: '#3b82f6',
-                    opacity: 0.2,
-                    width: 1
-                },
-                move: {
-                    enable: true,
-                    speed: 2,
-                    direction: 'none',
-                    random: false,
-                    straight: false,
-                    out_mode: 'out',
-                    bounce: false
-                }
+                number: { value: 60, density: { enable: true, value_area: 800 } },
+                color: { value: '#818cf8' },
+                shape: { type: 'circle' },
+                opacity: { value: 0.4, random: true },
+                size: { value: 3, random: true },
+                line_linked: { enable: true, distance: 150, color: '#818cf8', opacity: 0.3, width: 1 },
+                move: { enable: true, speed: 1.5, direction: 'none', random: true, straight: false, out_mode: 'out', bounce: false }
             },
             interactivity: {
                 detect_on: 'canvas',
-                events: {
-                    onhover: {
-                        enable: true,
-                        mode: 'grab'
-                    },
-                    onclick: {
-                        enable: true,
-                        mode: 'push'
-                    },
-                    resize: true
-                },
-                modes: {
-                    grab: {
-                        distance: 140,
-                        line_linked: {
-                            opacity: 0.5
-                        }
-                    },
-                    push: {
-                        particles_nb: 4
-                    }
-                }
+                events: { onhover: { enable: true, mode: 'grab' }, onclick: { enable: true, mode: 'push' }, resize: true },
+                modes: { grab: { distance: 140, line_linked: { opacity: 0.6 } }, push: { particles_nb: 3 } }
             },
             retina_detect: true
         });
     }
+
+    // Advanced stagger entrance for dashboard cards
+    staggerCardsEntrance();
 
     // Animate metric cards on page load
     animateMetricCards();
@@ -99,46 +52,69 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize tooltips
     initializeTooltips();
-
-    // Auto-refresh detection count (optional)
-    // startAutoRefresh();
 });
 
 /**
- * Animate metric cards with counting effect
+ * Advanced stagger entrance for cards
+ */
+function staggerCardsEntrance() {
+    const cards = document.querySelectorAll('.card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        card.style.transition = 'opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        
+        setTimeout(() => {
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+            
+            // Remove inline transition after animation completes so hover effects work
+            setTimeout(() => {
+                card.style.transition = '';
+            }, 600);
+        }, 100 + (index * 80)); // 80ms stagger delay
+    });
+}
+
+/**
+ * Animate metric cards with smooth easeOutExpo counting effect
  */
 function animateMetricCards() {
-    const metricNumbers = document.querySelectorAll('.metric-card h2');
+    const metricNumbers = document.querySelectorAll('.metric-card h2, .metric-card h3');
     
+    // easeOutExpo function
+    const easeOutExpo = (x) => x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
+
     metricNumbers.forEach(element => {
         const text = element.textContent;
         const number = parseFloat(text.replace(/[^0-9.]/g, ''));
         
-        if (isNaN(number)) return;
+        if (isNaN(number) || number === 0) return;
         
-        const duration = 1500;
-        const steps = 60;
-        const increment = number / steps;
-        let current = 0;
-        let step = 0;
+        const duration = 2000; // 2 seconds
+        const fps = 60;
+        const frames = (duration / 1000) * fps;
+        let frame = 0;
         
+        const suffix = text.replace(/[0-9.]/g, '');
+        const isDecimal = text.includes('.');
+
         const timer = setInterval(() => {
-            current += increment;
-            step++;
+            frame++;
+            const progress = easeOutExpo(frame / frames);
+            const current = number * progress;
             
-            if (step >= steps) {
-                current = number;
+            if (frame >= frames) {
+                element.textContent = text; // Ensure exact final text
                 clearInterval(timer);
-            }
-            
-            // Preserve any text formatting (%, etc.)
-            const suffix = text.replace(/[0-9.]/g, '');
-            if (suffix.includes('%')) {
-                element.textContent = current.toFixed(1) + '%';
             } else {
-                element.textContent = Math.floor(current);
+                if (isDecimal || suffix.includes('%')) {
+                    element.textContent = current.toFixed(1) + suffix;
+                } else {
+                    element.textContent = Math.floor(current) + suffix;
+                }
             }
-        }, duration / steps);
+        }, 1000 / fps);
     });
 }
 
@@ -231,7 +207,7 @@ function showToast(message, type = 'info', duration = 3000) {
             'success': 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
             'danger': 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
             'warning': 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-            'info': 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
+            'info': 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
         };
         
         Toastify({
